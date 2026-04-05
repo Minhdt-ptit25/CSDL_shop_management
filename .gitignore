@@ -1,0 +1,53 @@
+# Giấu các biến môi trường
+.env
+*.env
+
+# Python (Tạo ra trong quá trình chạy)
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# Môi trường ảo của Python (Virtual Environments)
+.venv/
+venv/
+env/
+ENV/
+env.bak/
+venv.bak/
+
+# File Database cục bộ
+*.db
+*.sqlite3
+*.sqlite
+os.sqlite
+
+# Cấu hình IDE / Editor
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# MacOS / Windows File hệ thống
+.DS_Store
+Thumbs.db
+ehthumbs.db
+Desktop.ini
