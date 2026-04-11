@@ -51,3 +51,5 @@ os.sqlite
 Thumbs.db
 ehthumbs.db
 Desktop.ini
+
+# node_modules
