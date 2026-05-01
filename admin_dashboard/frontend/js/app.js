@@ -481,6 +481,20 @@ document.addEventListener('DOMContentLoaded', () => {
     fetchOrders();
     fetchEmployees();
     fetchSuppliers();
+    
+    // Auto-refresh dashboard every 5 seconds (stats)
+    setInterval(() => {
+        fetchStats();
+    }, 5000);
+    
+    // Auto-refresh tables every 10 seconds (data)
+    setInterval(() => {
+        fetchProducts();
+        fetchCustomers();
+        fetchOrders();
+        fetchEmployees();
+        fetchSuppliers();
+    }, 10000);
 });
 
 // ===================== MODAL LOGIC =====================
@@ -556,6 +570,7 @@ async function submitProductForm() {
         if(res.ok) {
             showToast(isEdit ? 'Đã cập nhật SP!' : 'Đã thêm SP mới!', 'success');
             closeAllModals();
+            fetchStats();
             fetchProducts();
         } else {
             const err = await res.json();
@@ -567,10 +582,10 @@ async function submitProductForm() {
 }
 
 // ---- DELETE LOGIC ----
-function openDeleteModal(ma_sp) {
-    document.getElementById('delete-target-id').innerText = ma_sp;
-    document.getElementById('delete-item-id').value = ma_sp;
-    document.getElementById('delete-item-type').value = 'product';
+function openDeleteModal(id, type = 'product') {
+    document.getElementById('delete-target-id').innerText = id;
+    document.getElementById('delete-item-id').value = id;
+    document.getElementById('delete-item-type').value = type;
     openModal('modal-delete');
 }
 
@@ -593,6 +608,7 @@ async function confirmDelete() {
         if(res.ok) {
             showToast('Đã xóa thành công!', 'success');
             closeAllModals();
+            fetchStats(); // Refresh stats after delete
             if (type === 'product') fetchProducts();
             else if (type === 'customer') fetchCustomers();
             else if (type === 'order') fetchOrders();
@@ -731,6 +747,7 @@ async function submitCustomerForm() {
         if(res.ok) {
             showToast(isEdit ? 'Đã cập nhật KH!' : 'Đã thêm KH mới!', 'success');
             closeAllModals();
+            fetchStats();
             fetchCustomers();
         } else {
             const err = await res.json();
@@ -801,6 +818,7 @@ async function submitOrderForm() {
         if(res.ok) {
             showToast(isEdit ? 'Đã cập nhật HĐ!' : 'Đã thêm HĐ mới!', 'success');
             closeAllModals();
+            fetchStats();
             fetchOrders();
         } else {
             showToast('Có lỗi xảy ra', 'error');
@@ -868,6 +886,7 @@ async function submitEmployeeForm() {
         if(res.ok) {
             showToast(isEdit ? 'Đã cập nhật NV!' : 'Đã thêm NV mới!', 'success');
             closeAllModals();
+            fetchStats();
             fetchEmployees();
         } else {
             showToast('Có lỗi xảy ra', 'error');
@@ -933,6 +952,7 @@ async function submitSupplierForm() {
         if(res.ok) {
             showToast(isEdit ? 'Đã cập nhật NCC!' : 'Đã thêm NCC mới!', 'success');
             closeAllModals();
+            fetchStats();
             fetchSuppliers();
         } else {
             showToast('Có lỗi xảy ra', 'error');

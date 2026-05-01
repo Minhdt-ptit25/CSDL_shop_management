@@ -86,15 +86,16 @@ router.get("/stats", async (_req, res, next) => {
 
     const salesRevenue = sales.reduce((sum, r) => sum + (toNumber(r.tong_tien) || 0), 0);
     const purchaseCost = purchases.reduce((sum, r) => sum + (toNumber(r.tong_tien) || 0), 0);
-    const netRevenue = salesRevenue - purchaseCost;
+    const netProfit = salesRevenue - purchaseCost;
 
     res.json({
-      total_revenue: netRevenue,
+      total_revenue: salesRevenue,
       total_orders: totalOrders,
       total_products: totalProducts,
       total_customers: totalCustomers,
       sales_revenue: salesRevenue,
       purchase_cost: purchaseCost,
+      net_profit: netProfit,
     });
   } catch (err) {
     next(err);
@@ -275,6 +276,19 @@ router.delete("/products/:ma_sp", requireAdmin, async (req, res, next) => {
     const ma_sp = String(req.params.ma_sp);
     const existing = await prisma.sanPham.findUnique({ where: { ma_sp } });
     if (!existing) return res.status(404).json({ detail: "Product not found" });
+    
+    // Delete SKU variants and their dependencies first (foreign key constraint)
+    const skus = await prisma.bienTheSKU.findMany({ where: { ma_sp } });
+    for (const sku of skus) {
+      // Delete order details referencing this SKU
+      await prisma.chiTietHoaDon.deleteMany({ where: { ma_sku: sku.ma_sku } });
+      // Delete import receipt details referencing this SKU
+      await prisma.chiTietPhieuNhap.deleteMany({ where: { ma_sku: sku.ma_sku } });
+    }
+    // Then delete the SKU variants themselves
+    await prisma.bienTheSKU.deleteMany({ where: { ma_sp } });
+    
+    // Finally delete the product
     await prisma.sanPham.delete({ where: { ma_sp } });
     res.json({ message: "Product deleted successfully" });
   } catch (err) {
@@ -332,6 +346,15 @@ router.delete("/customers/:ma_kh", requireAdmin, async (req, res, next) => {
     const ma_kh = String(req.params.ma_kh);
     const existing = await prisma.khachHang.findUnique({ where: { ma_kh } });
     if (!existing) return res.status(404).json({ detail: "Customer not found" });
+    
+    // Delete related orders first (foreign key constraint)
+    const orders = await prisma.hoaDon.findMany({ where: { ma_kh } });
+    for (const order of orders) {
+      await prisma.chiTietHoaDon.deleteMany({ where: { ma_hd: order.ma_hd } });
+    }
+    await prisma.hoaDon.deleteMany({ where: { ma_kh } });
+    
+    // Then delete the customer
     await prisma.khachHang.delete({ where: { ma_kh } });
     res.json({ message: "Customer deleted successfully" });
   } catch (err) {
@@ -346,7 +369,7 @@ router.post("/orders", requireAdmin, async (req, res) => {
     const created = await prisma.hoaDon.create({
       data: {
         ma_hd: String(data.ma_hd),
-        ngay_tao: new Date(data.ngay_tao),
+        ngay_tao: toDateOnlyString(data.ngay_tao),
         tong_tien: data.tong_tien,
         phuong_thuc_thanh_toan: String(data.phuong_thuc_thanh_toan),
         trang_thai: String(data.trang_thai),
@@ -371,7 +394,7 @@ router.put("/orders/:ma_hd", requireAdmin, async (req, res, next) => {
     const updated = await prisma.hoaDon.update({
       where: { ma_hd },
       data: {
-        ngay_tao: data.ngay_tao ? new Date(data.ngay_tao) : undefined,
+        ngay_tao: data.ngay_tao ? toDateOnlyString(data.ngay_tao) : undefined,
         tong_tien: data.tong_tien != null ? data.tong_tien : undefined,
         phuong_thuc_thanh_toan: data.phuong_thuc_thanh_toan ? String(data.phuong_thuc_thanh_toan) : undefined,
         trang_thai: data.trang_thai ? String(data.trang_thai) : undefined,
@@ -390,6 +413,11 @@ router.delete("/orders/:ma_hd", requireAdmin, async (req, res, next) => {
     const ma_hd = String(req.params.ma_hd);
     const existing = await prisma.hoaDon.findUnique({ where: { ma_hd } });
     if (!existing) return res.status(404).json({ detail: "Order not found" });
+    
+    // Delete related order details first (foreign key constraint)
+    await prisma.chiTietHoaDon.deleteMany({ where: { ma_hd } });
+    
+    // Then delete the order
     await prisma.hoaDon.delete({ where: { ma_hd } });
     res.json({ message: "Order deleted successfully" });
   } catch (err) {
@@ -405,12 +433,12 @@ router.post("/employees", requireAdmin, async (req, res) => {
       data: {
         ma_nv: String(data.ma_nv),
         ho_ten_nv: String(data.ho_ten_nv),
-        ngay_sinh: new Date(data.ngay_sinh),
+        ngay_sinh: toDateOnlyString(data.ngay_sinh),
         gioi_tinh: String(data.gioi_tinh),
         dia_chi: String(data.dia_chi),
         sdt: String(data.sdt),
         email: String(data.email),
-        ngay_vao_lam: new Date(data.ngay_vao_lam),
+        ngay_vao_lam: toDateOnlyString(data.ngay_vao_lam),
         ma_vi_tri: String(data.ma_vi_tri),
         ma_ch: String(data.ma_ch),
       },
@@ -433,12 +461,12 @@ router.put("/employees/:ma_nv", requireAdmin, async (req, res, next) => {
       where: { ma_nv },
       data: {
         ho_ten_nv: data.ho_ten_nv ? String(data.ho_ten_nv) : undefined,
-        ngay_sinh: data.ngay_sinh ? new Date(data.ngay_sinh) : undefined,
+        ngay_sinh: data.ngay_sinh ? toDateOnlyString(data.ngay_sinh) : undefined,
         gioi_tinh: data.gioi_tinh ? String(data.gioi_tinh) : undefined,
         dia_chi: data.dia_chi ? String(data.dia_chi) : undefined,
         sdt: data.sdt ? String(data.sdt) : undefined,
         email: data.email ? String(data.email) : undefined,
-        ngay_vao_lam: data.ngay_vao_lam ? new Date(data.ngay_vao_lam) : undefined,
+        ngay_vao_lam: data.ngay_vao_lam ? toDateOnlyString(data.ngay_vao_lam) : undefined,
         ma_vi_tri: data.ma_vi_tri ? String(data.ma_vi_tri) : undefined,
         ma_ch: data.ma_ch ? String(data.ma_ch) : undefined,
       },
@@ -454,6 +482,22 @@ router.delete("/employees/:ma_nv", requireAdmin, async (req, res, next) => {
     const ma_nv = String(req.params.ma_nv);
     const existing = await prisma.nhanVien.findUnique({ where: { ma_nv } });
     if (!existing) return res.status(404).json({ detail: "Employee not found" });
+    
+    // Delete related orders and their details first (foreign key constraint)
+    const orders = await prisma.hoaDon.findMany({ where: { ma_nv } });
+    for (const order of orders) {
+      await prisma.chiTietHoaDon.deleteMany({ where: { ma_hd: order.ma_hd } });
+    }
+    await prisma.hoaDon.deleteMany({ where: { ma_nv } });
+    
+    // Delete import receipts and their details
+    const imports = await prisma.phieuNhap.findMany({ where: { ma_nv } });
+    for (const importDoc of imports) {
+      await prisma.chiTietPhieuNhap.deleteMany({ where: { ma_pn: importDoc.ma_pn } });
+    }
+    await prisma.phieuNhap.deleteMany({ where: { ma_nv } });
+    
+    // Then delete the employee
     await prisma.nhanVien.delete({ where: { ma_nv } });
     res.json({ message: "Employee deleted" });
   } catch (err) {
@@ -508,6 +552,30 @@ router.delete("/suppliers/:ma_ncc", requireAdmin, async (req, res, next) => {
     const ma_ncc = String(req.params.ma_ncc);
     const existing = await prisma.nhaCungCap.findUnique({ where: { ma_ncc } });
     if (!existing) return res.status(404).json({ detail: "Supplier not found" });
+    
+    // Delete related products first (foreign key constraint)
+    const products = await prisma.sanPham.findMany({ where: { ma_ncc } });
+    for (const product of products) {
+      // Delete SKU variants for this product
+      const skus = await prisma.bienTheSKU.findMany({ where: { ma_sp: product.ma_sp } });
+      for (const sku of skus) {
+        // Delete order details referencing this SKU
+        await prisma.chiTietHoaDon.deleteMany({ where: { ma_sku: sku.ma_sku } });
+        // Delete import receipt details referencing this SKU
+        await prisma.chiTietPhieuNhap.deleteMany({ where: { ma_sku: sku.ma_sku } });
+      }
+      await prisma.bienTheSKU.deleteMany({ where: { ma_sp: product.ma_sp } });
+    }
+    await prisma.sanPham.deleteMany({ where: { ma_ncc } });
+    
+    // Delete import receipts and their details
+    const imports = await prisma.phieuNhap.findMany({ where: { ma_ncc } });
+    for (const importDoc of imports) {
+      await prisma.chiTietPhieuNhap.deleteMany({ where: { ma_pn: importDoc.ma_pn } });
+    }
+    await prisma.phieuNhap.deleteMany({ where: { ma_ncc } });
+    
+    // Then delete the supplier
     await prisma.nhaCungCap.delete({ where: { ma_ncc } });
     res.json({ message: "Supplier deleted" });
   } catch (err) {
