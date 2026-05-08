@@ -100,6 +100,211 @@ const formatCurrency = (amount) => {
     return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(amount);
 };
 
+const getMemberTier = (points) => {
+    if (points >= 450) return 'Kim cương';
+    if (points >= 350) return 'Bạch kim';
+    if (points >= 250) return 'Vàng';
+    if (points >= 150) return 'Bạc';
+    return 'Đồng';
+};
+
+let categorySalesChart = null;
+let monthlyRevenueChart = null;
+let yearlyRevenueChart = null;
+
+function renderCategorySalesChart(data) {
+    const ctx = document.getElementById('category-sales-chart');
+    if (!ctx) return;
+
+    const labels = data.map(item => item.category || 'Khác');
+    const values = data.map(item => item.quantity || 0);
+    const colors = [
+        '#3f6ad8', '#16aaff', '#3ac47d', '#f7b924', '#d92550', '#434343', '#8c61ff', '#17a2b8'
+    ];
+
+    if (categorySalesChart) {
+        categorySalesChart.data.labels = labels;
+        categorySalesChart.data.datasets[0].data = values;
+        categorySalesChart.update();
+        return;
+    }
+
+    categorySalesChart = new Chart(ctx, {
+        type: 'pie',
+        data: {
+            labels,
+            datasets: [{
+                data: values,
+                backgroundColor: colors.slice(0, labels.length),
+                borderColor: '#fff',
+                borderWidth: 2,
+            }],
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: true,
+            aspectRatio: 1,
+            plugins: {
+                legend: { position: 'bottom', labels: { boxWidth: 12, padding: 10 } },
+                tooltip: { callbacks: { label: context => `${context.label}: ${context.parsed}` } }
+            },
+        },
+    });
+}
+
+function renderMonthlyRevenueChart(data) {
+    const ctx = document.getElementById('monthly-revenue-chart');
+    if (!ctx) return;
+
+    const labels = data.map(item => item.month);
+    const values = data.map(item => item.revenue || 0);
+
+    if (monthlyRevenueChart) {
+        monthlyRevenueChart.data.labels = labels;
+        monthlyRevenueChart.data.datasets[0].data = values;
+        monthlyRevenueChart.update();
+        return;
+    }
+
+    monthlyRevenueChart = new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels,
+            datasets: [{
+                label: 'Doanh thu (VND)',
+                data: values,
+                backgroundColor: '#3f6ad8',
+                borderColor: '#3152a5',
+                borderWidth: 1,
+            }],
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                x: { grid: { display: false } },
+                y: {
+                    beginAtZero: true,
+                    ticks: { callback: value => value >= 1000 ? new Intl.NumberFormat('vi-VN').format(value) : value }
+                }
+            },
+            plugins: {
+                legend: { display: false },
+                tooltip: {
+                    callbacks: {
+                        label: context => `${formatCurrency(context.parsed.y)}`
+                    }
+                }
+            }
+        },
+    });
+}
+
+function renderYearlyRevenueChart(data) {
+    const ctx = document.getElementById('yearly-revenue-chart');
+    if (!ctx) return;
+
+    const labels = data.map(item => item.year);
+    const values = data.map(item => item.revenue || 0);
+
+    if (yearlyRevenueChart) {
+        yearlyRevenueChart.data.labels = labels;
+        yearlyRevenueChart.data.datasets[0].data = values;
+        yearlyRevenueChart.update();
+        return;
+    }
+
+    yearlyRevenueChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels,
+            datasets: [{
+                label: 'Doanh thu theo năm',
+                data: values,
+                backgroundColor: 'rgba(63,106,216,0.12)',
+                borderColor: '#3f6ad8',
+                borderWidth: 3,
+                pointRadius: 4,
+                pointBackgroundColor: '#fff',
+                pointBorderColor: '#3f6ad8',
+                fill: true,
+                tension: 0.25,
+            }],
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                x: { grid: { display: false } },
+                y: {
+                    beginAtZero: true,
+                    ticks: { callback: value => value >= 1000 ? new Intl.NumberFormat('vi-VN').format(value) : value }
+                }
+            },
+            plugins: {
+                legend: { display: false },
+                tooltip: {
+                    callbacks: {
+                        label: context => `${formatCurrency(context.parsed.y)}`
+                    }
+                }
+            }
+        },
+    });
+}
+
+function renderTopCustomersList(customers) {
+    const list = document.getElementById('top-customers-list');
+    if (!list) return;
+    list.innerHTML = '';
+
+    if (!Array.isArray(customers) || customers.length === 0) {
+        list.innerHTML = '<li class="empty-state">Chưa có dữ liệu khách hàng.</li>';
+        return;
+    }
+
+    customers.forEach((customer, index) => {
+        const rank = index + 1;
+        const crown = rank <= 3 ? `<span class="crown rank-${rank}" aria-hidden="true"></span>` : '';
+        const li = document.createElement('li');
+        li.className = 'top-customers-item';
+        li.innerHTML = `
+            <span class="customer-rank">${rank}</span>
+            ${crown}
+            <div class="customer-info">
+                <div class="customer-name">${customer.ho_ten_kh}</div>
+                <div class="customer-points">${customer.diem_tich_luy} điểm</div>
+            </div>
+        `;
+        list.appendChild(li);
+    });
+}
+
+async function fetchDashboardCharts() {
+    try {
+        const [categoryResp, monthlyResp, yearlyResp, topCustomersResp] = await Promise.all([
+            fetch(`${API_BASE_URL}/report/category-sales`),
+            fetch(`${API_BASE_URL}/report/sales-monthly`),
+            fetch(`${API_BASE_URL}/report/sales-yearly`),
+            fetch(`${API_BASE_URL}/report/top-customers`),
+        ]);
+
+        const [categoryData, monthlyData, yearlyData, topCustomersData] = await Promise.all([
+            categoryResp.ok ? categoryResp.json() : [],
+            monthlyResp.ok ? monthlyResp.json() : [],
+            yearlyResp.ok ? yearlyResp.json() : [],
+            topCustomersResp.ok ? topCustomersResp.json() : [],
+        ]);
+
+        renderCategorySalesChart(Array.isArray(categoryData) ? categoryData : []);
+        renderMonthlyRevenueChart(Array.isArray(monthlyData) ? monthlyData : []);
+        renderYearlyRevenueChart(Array.isArray(yearlyData) ? yearlyData : []);
+        renderTopCustomersList(Array.isArray(topCustomersData) ? topCustomersData : []);
+    } catch (error) {
+        console.error('Error fetching dashboard charts:', error);
+    }
+}
+
 // Fetch Dashboard Stats
 async function fetchStats() {
     try {
@@ -357,15 +562,10 @@ function checkAuthStatus() {
         const overlay = document.getElementById('login-overlay');
         if(overlay) overlay.classList.remove('active');
         
-        const authHeader = document.getElementById('header-auth');
-        if (authHeader) authHeader.style.display = 'block';
-        const unauthHeader = document.getElementById('header-unauth');
-        if (unauthHeader) unauthHeader.style.display = 'none';
-
-        const searchBar = document.getElementById('header-search-bar');
-        const logoUnauth = document.getElementById('header-logo-unauth');
-        if(searchBar) searchBar.style.display = '';
-        if(logoUnauth) logoUnauth.style.display = 'none';
+        const authSidebar = document.getElementById('sidebar-auth');
+        if (authSidebar) authSidebar.style.display = 'flex';
+        const unauthSidebar = document.getElementById('sidebar-unauth');
+        if (unauthSidebar) unauthSidebar.style.display = 'none';
 
         // Assure a view is active
         if (!document.querySelector('.app-view.active')) {
@@ -384,25 +584,18 @@ function checkAuthStatus() {
         const overlay = document.getElementById('login-overlay');
         if(overlay) overlay.classList.remove('active'); // Hide popup, wait for button
         
-        const authHeader = document.getElementById('header-auth');
-        if (authHeader) authHeader.style.display = 'none';
-        const unauthHeader = document.getElementById('header-unauth');
-        if (unauthHeader) unauthHeader.style.display = 'flex';
+        const authSidebar = document.getElementById('sidebar-auth');
+        if (authSidebar) authSidebar.style.display = 'none';
+        const unauthSidebar = document.getElementById('sidebar-unauth');
+        if (unauthSidebar) unauthSidebar.style.display = 'flex';
 
         const sidebar = document.querySelector('.app-sidebar');
-        const headerLeft = document.querySelector('.app-header-left');
         const mainOuter = document.querySelector('.app-main__outer');
         const header = document.querySelector('.app-header');
-        const searchBar = document.getElementById('header-search-bar');
-        const logoUnauth = document.getElementById('header-logo-unauth');
 
         if(sidebar) sidebar.style.display = 'none';
-        if(headerLeft) headerLeft.style.display = '';
         if(mainOuter) mainOuter.style.paddingLeft = '0';
         if(header) { header.style.marginLeft = '0'; header.style.width = '100%'; }
-        
-        if(searchBar) searchBar.style.display = 'none';
-        if(logoUnauth) logoUnauth.style.display = 'block';
 
         document.querySelectorAll('.app-view').forEach(v => v.classList.remove('active'));
         if(document.getElementById('view-home')) document.getElementById('view-home').classList.add('active');
@@ -439,8 +632,37 @@ async function attemptLogin() {
 
 // Admin dropdown uses CSS :hover, so we don't need JS toggles.
 
+// Sidebar user dropdown toggle
+function toggleSidebarUserMenu(e) {
+    e.stopPropagation();
+    const dropdown = e.currentTarget;
+    const menu = document.getElementById('sidebar-user-menu');
+    
+    dropdown.classList.toggle('active');
+    menu.classList.toggle('active');
+}
+
+// Close sidebar menu when clicking outside
+document.addEventListener('click', () => {
+    const dropdown = document.querySelector('.sidebar-user-dropdown');
+    const menu = document.getElementById('sidebar-user-menu');
+    if (dropdown && menu) {
+        dropdown.classList.remove('active');
+        menu.classList.remove('active');
+    }
+});
+
 function logout(e) {
     if(e) e.stopPropagation();
+    
+    // Close the menu
+    const dropdown = document.querySelector('.sidebar-user-dropdown');
+    const menu = document.getElementById('sidebar-user-menu');
+    if (dropdown && menu) {
+        dropdown.classList.remove('active');
+        menu.classList.remove('active');
+    }
+    
     localStorage.removeItem('adminToken');
     checkAuthStatus();
     showToast('Đã đăng xuất tài khoản.', 'info');
@@ -481,12 +703,24 @@ document.addEventListener('DOMContentLoaded', () => {
     fetchOrders();
     fetchEmployees();
     fetchSuppliers();
+    fetchDashboardCharts();
     
-    // Auto-refresh dashboard every 5 seconds (stats)
+    // Auto-refresh dashboard every 5 seconds (stats + charts)
     setInterval(() => {
         fetchStats();
+        fetchDashboardCharts();
     }, 5000);
     
+    // Update customer tier when points change
+    const customerPointsInput = document.getElementById('c-diem');
+    const customerTierInput = document.getElementById('c-hang');
+    if (customerPointsInput && customerTierInput) {
+        customerPointsInput.addEventListener('input', () => {
+            const points = parseInt(customerPointsInput.value) || 0;
+            customerTierInput.value = getMemberTier(points);
+        });
+    }
+
     // Auto-refresh tables every 10 seconds (data)
     setInterval(() => {
         fetchProducts();
@@ -531,8 +765,11 @@ async function openEditProductModal(ma_sp) {
         document.getElementById('p-ten_sp').value = p.ten_sp || '';
         document.getElementById('p-gia').value = p.gia_ban || p.gia_nhap || 0;
         document.getElementById('p-soluong').value = p.so_luong_ton || 0;
-        document.getElementById('p-maloai').value = p.ma_loai || '';
-        document.getElementById('p-hang').value = p.ma_ncc || '';
+        document.getElementById('p-danhmuc').value = p.danh_muc || '';
+        document.getElementById('p-chatlieu').value = p.chat_lieu || '';
+        document.getElementById('p-muavu').value = p.mua_vu || '';
+        document.getElementById('p-gioitinh').value = p.gioi_tinh || '';
+        document.getElementById('p-ma_ncc').value = p.ma_ncc || '';
         openModal('modal-product');
     } catch(e) {
         showToast('Lỗi tải dữ liệu SP', 'error');
@@ -550,9 +787,11 @@ async function submitProductForm() {
         gia_ban: parseFloat(document.getElementById('p-gia').value) || 0,
         gia_nhap: parseFloat(document.getElementById('p-gia').value) || 0,
         so_luong_ton: parseInt(document.getElementById('p-soluong').value) || 0,
-        ma_loai: document.getElementById('p-maloai').value.trim(),
-        ma_ncc: document.getElementById('p-hang').value.trim(),
-        danh_muc: "Thời Trang", mua_vu: "All", gioi_tinh: "Unisex", chat_lieu: "Cotton"
+        danh_muc: document.getElementById('p-danhmuc').value.trim() || 'Thời Trang',
+        chat_lieu: document.getElementById('p-chatlieu').value.trim() || 'Cotton',
+        mua_vu: document.getElementById('p-muavu').value.trim() || 'All',
+        gioi_tinh: document.getElementById('p-gioitinh').value.trim() || 'Unisex',
+        ma_ncc: document.getElementById('p-ma_ncc').value.trim(),
     };
 
     const method = isEdit ? 'PUT' : 'POST';
@@ -693,6 +932,7 @@ async function openAddCustomerModal() {
     document.getElementById('modal-customer-title').innerText = 'Thêm Khách hàng';
     document.getElementById('form-customer').reset();
     document.getElementById('c-ma_kh').readOnly = false;
+    document.getElementById('c-hang').value = 'Đồng';
     openModal('modal-customer');
 }
 
@@ -712,7 +952,7 @@ async function openEditCustomerModal(ma_kh) {
         document.getElementById('c-sdt').value = c.sdt || '';
         document.getElementById('c-email').value = c.email || '';
         document.getElementById('c-diem').value = c.diem_tich_luy || 0;
-        document.getElementById('c-hang').value = c.hang_thanh_vien || 'Bronze';
+        document.getElementById('c-hang').value = getMemberTier(c.diem_tich_luy || 0);
         
         openModal('modal-customer');
     } catch(e) {
@@ -725,14 +965,15 @@ async function submitCustomerForm() {
     const ma_kh = document.getElementById('c-ma_kh').value.trim();
     if(!ma_kh) return showToast('Vui lòng nhập Mã KH', 'error');
 
+    const points = parseInt(document.getElementById('c-diem').value) || 0;
     const payload = {
         ma_kh: ma_kh,
         ho_ten_kh: document.getElementById('c-hoten').value.trim(),
         dia_chi: document.getElementById('c-diachi').value.trim(),
         sdt: document.getElementById('c-sdt').value.trim(),
         email: document.getElementById('c-email').value.trim(),
-        diem_tich_luy: parseInt(document.getElementById('c-diem').value) || 0,
-        hang_thanh_vien: document.getElementById('c-hang').value
+        diem_tich_luy: points,
+        hang_thanh_vien: getMemberTier(points)
     };
 
     const method = isEdit ? 'PUT' : 'POST';

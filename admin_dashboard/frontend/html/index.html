@@ -49,14 +49,14 @@
             <div class="scrollbar-sidebar">
                 <div class="app-sidebar__inner">
                     <ul class="vertical-nav-menu">
-                        <li class="app-sidebar__heading">Dashboards</li>
+                        <li class="app-sidebar__heading">Quản lý</li>
                         <li>
                             <a href="#" class="nav-link mm-active" data-view="dashboard">
                                 <i class="metismenu-icon pe-7s-rocket fas fa-chart-line"></i>
                                 Dashboard
                             </a>
                         </li>
-                        <li class="app-sidebar__heading">Quản lý</li>
+                        <!-- <li class="app-sidebar__heading">Quản lý</li> -->
                         <li>
                             <a href="#" class="nav-link" data-view="products">
                                 <i class="metismenu-icon pe-7s-box2 fas fa-box"></i>
@@ -90,6 +90,31 @@
                     </ul>
                 </div>
             </div>
+            <div class="app-sidebar__footer">
+                <!-- Unauthenticated State -->
+                <div id="sidebar-unauth" class="sidebar-auth-section">
+                    <button class="btn btn-primary sidebar-login-btn" onclick="showLoginModal()">
+                        <i class="fas fa-sign-in-alt mr-2"></i> Đăng nhập
+                    </button>
+                </div>
+
+                <!-- Authenticated State -->
+                <div id="sidebar-auth" class="sidebar-auth-section" style="display: none;">
+                    <div class="sidebar-user-dropdown" onclick="toggleSidebarUserMenu(event)">
+                        <img class="sidebar-user-avatar" src="../assets/images/admin_avatar.png" alt="Admin">
+                        <div class="sidebar-user-details">
+                            <div class="sidebar-user-name">Admin User</div>
+                            <div class="sidebar-user-role">Quản lý</div>
+                        </div>
+                        <i class="fas fa-chevron-down sidebar-dropdown-icon"></i>
+                    </div>
+                    <div id="sidebar-user-menu" class="sidebar-user-menu">
+                        <button type="button" class="sidebar-menu-item" onclick="logout(event)">
+                            <i class="fas fa-sign-out-alt"></i> Đăng xuất
+                        </button>
+                    </div>
+                </div>
+            </div>
         </div>
 
         <!-- Main Content Wrapper -->
@@ -98,54 +123,8 @@
             <div class="app-header header-shadow">
                 <div class="app-header__content">
                     <div class="app-header-left">
-                        <div id="header-logo-unauth" class="logo-text"
-                            style="display: none; color: #3f6ad8; font-size: 2.2rem; text-shadow: none; margin-left: 10px;">
-                            Fashion</div>
                     </div>
                     <div class="app-header-right">
-                        <!-- Unauthenticated State -->
-                        <div id="header-unauth" class="header-btn-lg pr-0" style="display: flex; align-items: center;">
-                            <button class="btn btn-primary" onclick="showLoginModal()"
-                                style="font-weight: 600; padding: 0.5rem 1.5rem; border-radius: 30px; letter-spacing: 0.5px; box-shadow: 0 4px 10px rgba(63, 106, 216, 0.3);">
-                                <i class="fas fa-sign-in-alt mr-2"></i> Đăng nhập
-                            </button>
-                        </div>
-
-                        <!-- Authenticated State -->
-                        <style>
-                            #admin-menu {
-                                display: none;
-                            }
-
-                            #admin-dropdown-group:hover #admin-menu {
-                                display: block;
-                            }
-                        </style>
-                        <div id="header-auth" class="header-btn-lg pr-0"
-                            style="display: none; height: 100%; align-items: stretch;">
-                            <div id="admin-dropdown-group"
-                                style="position: relative; cursor: pointer; display: flex; align-items: center; padding: 0 14px; height: var(--header-h); transition: background 0.2s ease;"
-                                onmouseover="this.style.background='rgba(0,0,0,0.05)'"
-                                onmouseout="this.style.background='transparent'">
-                                <img class="rounded-circle admin-avatar" src="../assets/images/admin_avatar.png" alt="Admin">
-                                <div class="header-user-info ml-3">
-                                    <div class="widget-heading">Admin User</div>
-                                    <div class="widget-subheading">Quản lý</div>
-                                </div>
-                                <i class="fa fa-angle-down ml-3" style="opacity:0.6;"></i>
-
-                                <!-- Dropdown: absolute right below this specific bar -->
-                                <div id="admin-menu"
-                                    style="position: absolute; left: 0; right: 0; top: 100%; background: white; border: 1px solid #e0e0e0; border-top: none; padding: 0; border-radius: 0 0 2px 2px; box-shadow: 0 6px 20px rgba(0,0,0,0.12); z-index: 9000; overflow: hidden; min-width: 100%;">
-                                    <button type="button" class="dropdown-item"
-                                        style="display: flex; align-items: center; justify-content: center; width: 100%; padding: 0.9rem 1.5rem; text-align: center; background: white; border: none; cursor: pointer; color: #dc3545; font-size: 0.95rem; font-weight: 500; transition: background 0.2s; gap: 8px;"
-                                        onmouseover="this.style.background='#fff5f5'"
-                                        onmouseout="this.style.background='white'" onclick="logout(event)">
-                                        <i class="fas fa-sign-out-alt"></i> Đăng xuất
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
                     </div>
                 </div>
             </div>
@@ -229,29 +208,39 @@
                             </div>
                         </div>
 
-                        <!-- Products Table -->
+                        <!-- Dashboard Charts -->
                         <div class="row">
-                            <div class="col-md-12">
+                            <div class="col-md-6">
                                 <div class="main-card mb-3 card">
-                                    <div class="card-header">Tổng quan Sản phẩm Hoạt động</div>
-                                    <div class="table-responsive">
-                                        <table
-                                            class="align-middle mb-0 table table-borderless table-striped table-hover">
-                                            <thead>
-                                                <tr>
-                                                    <th class="text-center">ID</th>
-                                                    <th>Tên Sản phẩm</th>
-                                                    <th class="text-center">Danh mục</th>
-                                                    <th class="text-center">Mùa</th>
-                                                </tr>
-                                            </thead>
-                                            <tbody id="products-table-body">
-                                                <!-- Dynamically populated -->
-                                                <tr>
-                                                    <td colspan="4" class="text-center">Đang tải sản phẩm...</td>
-                                                </tr>
-                                            </tbody>
-                                        </table>
+                                    <div class="card-header">Cơ cấu bán hàng theo danh mục</div>
+                                    <div class="card-body">
+                                        <canvas id="category-sales-chart"></canvas>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="main-card mb-3 card">
+                                    <div class="card-header">Top 5 khách hàng theo điểm</div>
+                                    <div class="card-body">
+                                        <ol id="top-customers-list" class="top-customers-list"></ol>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="main-card mb-3 card">
+                                    <div class="card-header">Doanh thu hàng tháng</div>
+                                    <div class="card-body">
+                                        <canvas id="monthly-revenue-chart"></canvas>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="main-card mb-3 card">
+                                    <div class="card-header">Doanh thu theo năm</div>
+                                    <div class="card-body">
+                                        <canvas id="yearly-revenue-chart"></canvas>
                                     </div>
                                 </div>
                             </div>
@@ -585,13 +574,28 @@
                             required></div>
                 </div>
                 <div class="form-group row">
-                    <label class="col-sm-4 col-form-label">Loại SP</label>
-                    <div class="col-sm-8"><input type="text" id="p-maloai" class="form-control" placeholder="Mã loại"
+                    <label class="col-sm-4 col-form-label">Danh mục</label>
+                    <div class="col-sm-8"><input type="text" id="p-danhmuc" class="form-control" placeholder="Ví dụ: Áo thun"
                             required></div>
                 </div>
                 <div class="form-group row">
-                    <label class="col-sm-4 col-form-label">Hãng SX</label>
-                    <div class="col-sm-8"><input type="text" id="p-hang" class="form-control" placeholder="Mã hãng"
+                    <label class="col-sm-4 col-form-label">Chất liệu</label>
+                    <div class="col-sm-8"><input type="text" id="p-chatlieu" class="form-control" placeholder="Ví dụ: Cotton"
+                            required></div>
+                </div>
+                <div class="form-group row">
+                    <label class="col-sm-4 col-form-label">Mùa vụ</label>
+                    <div class="col-sm-8"><input type="text" id="p-muavu" class="form-control" placeholder="Ví dụ: Xuân Hè"
+                            required></div>
+                </div>
+                <div class="form-group row">
+                    <label class="col-sm-4 col-form-label">Giới tính</label>
+                    <div class="col-sm-8"><input type="text" id="p-gioitinh" class="form-control" placeholder="Ví dụ: Nam/Nữ/Unisex"
+                            required></div>
+                </div>
+                <div class="form-group row">
+                    <label class="col-sm-4 col-form-label">Mã NCC</label>
+                    <div class="col-sm-8"><input type="text" id="p-ma_ncc" class="form-control" placeholder="Ví dụ: NCC01"
                             required></div>
                 </div>
                 <input type="hidden" id="p-is-edit" value="false">
@@ -705,13 +709,7 @@
                 </div>
                 <div class="form-group row">
                     <label class="col-sm-4 col-form-label">Hạng TV</label>
-                    <div class="col-sm-8">
-                        <select id="c-hang" class="form-control">
-                            <option value="Bronze">Bronze</option>
-                            <option value="Silver">Silver</option>
-                            <option value="Gold">Gold</option>
-                        </select>
-                    </div>
+                    <div class="col-sm-8"><input type="text" id="c-hang" class="form-control" disabled value="Đồng"></div>
                 </div>
                 <input type="hidden" id="c-is-edit" value="false">
             </form>
@@ -1015,6 +1013,7 @@
         </div>
     </div>
 
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="../js/app.js"></script>
 </body>
 
