@@ -74,7 +74,7 @@ function serializeNhaCungCap(row) {
 router.get("/stats", async (_req, res, next) => {
   try {
     const [totalProducts, totalOrders, totalCustomers] = await Promise.all([
-      prisma.bienTheSKU.count(),
+      prisma.sanPham.count(),
       prisma.hoaDon.count(),
       prisma.khachHang.count(),
     ]);
@@ -192,6 +192,74 @@ router.get("/report/category-sales", async (_req, res, next) => {
         category: r.category,
         quantity: Number(r.quantity || 0),
         revenue: Number(r.revenue || 0),
+      })),
+    );
+  } catch (err) {
+    next(err);
+  }
+});
+
+router.get('/report/sales-monthly', async (_req, res, next) => {
+  try {
+    const rows = await prisma.$queryRaw`
+      SELECT
+        strftime('%Y-%m', ngay_tao) AS month,
+        SUM(tong_tien) AS revenue
+      FROM hoadon
+      GROUP BY month
+      ORDER BY month
+    `;
+
+    const result = Array.isArray(rows) ? rows : [];
+    res.json(
+      result.map((r) => ({
+        month: r.month,
+        revenue: Number(r.revenue || 0),
+      })),
+    );
+  } catch (err) {
+    next(err);
+  }
+});
+
+router.get('/report/sales-yearly', async (_req, res, next) => {
+  try {
+    const rows = await prisma.$queryRaw`
+      SELECT
+        strftime('%Y', ngay_tao) AS year,
+        SUM(tong_tien) AS revenue
+      FROM hoadon
+      GROUP BY year
+      ORDER BY year
+    `;
+
+    const result = Array.isArray(rows) ? rows : [];
+    res.json(
+      result.map((r) => ({
+        year: r.year,
+        revenue: Number(r.revenue || 0),
+      })),
+    );
+  } catch (err) {
+    next(err);
+  }
+});
+
+router.get('/report/top-customers', async (_req, res, next) => {
+  try {
+    const rows = await prisma.$queryRaw`
+      SELECT ma_kh, ho_ten_kh, diem_tich_luy
+      FROM khachhang
+      ORDER BY diem_tich_luy DESC
+      LIMIT 5
+    `;
+
+    const result = Array.isArray(rows) ? rows : [];
+    res.json(
+      result.map((r) => ({
+        ma_kh: r.ma_kh,
+        ho_ten_kh: r.ho_ten_kh,
+        diem_tich_luy: Number(r.diem_tich_luy || 0),
       })),
     );
   } catch (err) {
