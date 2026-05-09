@@ -5,6 +5,29 @@ const { toDateOnlyString, toNumber } = require("../utils/serialize");
 
 const router = express.Router();
 
+function isPrismaUniqueConstraintError(err) {
+  return err && err.code === "P2002";
+}
+
+function prismaDuplicateFieldDetail(err) {
+  const target = err?.meta?.target;
+  const fields = Array.isArray(target) ? target : [target];
+  const names = fields.map((field) => String(field).toLowerCase());
+
+  if (names.includes("ma_nv")) return "Mã NV đã tồn tại";
+  if (names.includes("ma_sp")) return "Mã SP đã tồn tại";
+  if (names.includes("ma_kh")) return "Mã KH đã tồn tại";
+  if (names.includes("ma_hd")) return "Mã HĐ đã tồn tại";
+  if (names.includes("ma_ncc")) return "Mã NCC đã tồn tại";
+  if (names.includes("sdt")) return "SĐT đã tồn tại";
+  if (names.includes("email")) return "Email đã tồn tại";
+  return "Giá trị đã tồn tại";
+}
+
+function prismaDuplicateIdResponse(res, err) {
+  return res.status(400).json({ detail: prismaDuplicateFieldDetail(err) });
+}
+
 router.get("/", (_req, res) => {
   res.json({ ok: true, version: "v1" });
 });
@@ -310,6 +333,7 @@ router.post("/products", requireAdmin, async (req, res, next) => {
     });
     res.json(serializeSanPham(created));
   } catch (err) {
+    if (isPrismaUniqueConstraintError(err)) return prismaDuplicateIdResponse(res);
     // Mirror FastAPI style: 400 with detail
     res.status(400).json({ detail: String(err.message || err) });
   }
@@ -380,7 +404,8 @@ router.post("/customers", requireAdmin, async (req, res) => {
       },
     });
     res.json(serializeKhachHang(created));
-  } catch (_err) {
+  } catch (err) {
+    if (isPrismaUniqueConstraintError(err)) return prismaDuplicateIdResponse(res);
     res.status(400).json({ detail: "Cannot create customer" });
   }
 });
@@ -434,10 +459,13 @@ router.delete("/customers/:ma_kh", requireAdmin, async (req, res, next) => {
 router.post("/orders", requireAdmin, async (req, res) => {
   try {
     const data = req.body || {};
+    const ngay_tao = toDateOnlyString(data.ngay_tao);
+    if (!ngay_tao) return res.status(400).json({ detail: "Trường ngay_tao không hợp lệ" });
+
     const created = await prisma.hoaDon.create({
       data: {
         ma_hd: String(data.ma_hd),
-        ngay_tao: toDateOnlyString(data.ngay_tao),
+        ngay_tao,
         tong_tien: data.tong_tien,
         phuong_thuc_thanh_toan: String(data.phuong_thuc_thanh_toan),
         trang_thai: String(data.trang_thai),
@@ -446,7 +474,8 @@ router.post("/orders", requireAdmin, async (req, res) => {
       },
     });
     res.json(serializeHoaDon(created));
-  } catch (_err) {
+  } catch (err) {
+    if (isPrismaUniqueConstraintError(err)) return prismaDuplicateIdResponse(res, err);
     res.status(400).json({ detail: "Cannot create order" });
   }
 });
@@ -497,27 +526,38 @@ router.delete("/orders/:ma_hd", requireAdmin, async (req, res, next) => {
 router.post("/employees", requireAdmin, async (req, res) => {
   try {
     const data = req.body || {};
+    const ngay_vao_lam = toDateOnlyString(data.ngay_vao_lam);
+    if (!ngay_vao_lam) {
+      return res.status(400).json({ detail: "Trường ngay_vao_lam là bắt buộc" });
+    }
+
+    const ngay_sinh = toDateOnlyString(data.ngay_sinh);
+    if (!ngay_sinh) {
+      return res.status(400).json({ detail: "Trường ngay_sinh là bắt buộc" });
+    }
+
     const created = await prisma.nhanVien.create({
       data: {
         ma_nv: String(data.ma_nv),
         ho_ten_nv: String(data.ho_ten_nv),
-        ngay_sinh: toDateOnlyString(data.ngay_sinh),
+        ngay_sinh,
         gioi_tinh: String(data.gioi_tinh),
         dia_chi: String(data.dia_chi),
         sdt: String(data.sdt),
         email: String(data.email),
-        ngay_vao_lam: toDateOnlyString(data.ngay_vao_lam),
+        ngay_vao_lam,
         ma_vi_tri: String(data.ma_vi_tri),
         ma_ch: String(data.ma_ch),
       },
     });
     res.json(serializeNhanVien(created));
   } catch (err) {
+    if (isPrismaUniqueConstraintError(err)) return prismaDuplicateIdResponse(res, err);
     res.status(400).json({ detail: String(err.message || err) });
   }
 });
 
-// Note: FastAPI version didn't implement PUT for employees, but the frontend uses it.
+// Note: FastAPI version didn't implement PUT for employees, but the frontend uses it,
 router.put("/employees/:ma_nv", requireAdmin, async (req, res, next) => {
   try {
     const ma_nv = String(req.params.ma_nv);
@@ -588,6 +628,7 @@ router.post("/suppliers", requireAdmin, async (req, res) => {
     });
     res.json(serializeNhaCungCap(created));
   } catch (err) {
+    if (isPrismaUniqueConstraintError(err)) return prismaDuplicateIdResponse(res);
     res.status(400).json({ detail: String(err.message || err) });
   }
 });

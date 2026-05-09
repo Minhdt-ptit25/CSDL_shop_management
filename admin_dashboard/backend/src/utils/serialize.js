@@ -1,7 +1,7 @@
 function toDateOnlyString(value) {
-  if (!value) return value;
+  if (value === undefined || value === null || value === "") return undefined;
   const d = value instanceof Date ? value : new Date(value);
-  if (Number.isNaN(d.getTime())) return value;
+  if (Number.isNaN(d.getTime())) return undefined;
   return d.toISOString().slice(0, 10);
 }
 
