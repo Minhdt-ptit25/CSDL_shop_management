@@ -1062,7 +1062,8 @@ async function submitOrderForm() {
             fetchStats();
             fetchOrders();
         } else {
-            showToast('Có lỗi xảy ra', 'error');
+            const err = await res.json().catch(() => ({}));
+            showToast(err.detail || 'Có lỗi xảy ra', 'error');
         }
     } catch(e) {
         showToast('Lỗi Server', 'error');
@@ -1094,6 +1095,10 @@ async function openEditEmployeeModal(ma_nv) {
         document.getElementById('e-gioitinh').value = e.gioi_tinh || 'Nam';
         document.getElementById('e-sdt').value = e.sdt || '';
         document.getElementById('e-vitri').value = e.ma_vi_tri || '';
+        document.getElementById('e-ma_ch').value = e.ma_ch || '';
+        document.getElementById('e-diachi').value = e.dia_chi || '';
+        document.getElementById('e-email').value = e.email || '';
+        document.getElementById('e-ngayvaolam').value = e.ngay_vao_lam ? e.ngay_vao_lam.slice(0, 10) : '';
         
         openModal('modal-employee');
     } catch(err) {
@@ -1109,10 +1114,14 @@ async function submitEmployeeForm() {
     const payload = {
         ma_nv: ma_nv,
         ho_ten_nv: document.getElementById('e-hoten').value.trim(),
-        ngay_sinh: document.getElementById('e-ngaysinh').value || null,
-        gioi_tinh: document.getElementById('e-gioitinh').value || null,
+        ngay_sinh: document.getElementById('e-ngaysinh').value,
+        gioi_tinh: document.getElementById('e-gioitinh').value,
+        dia_chi: document.getElementById('e-diachi').value.trim(),
         sdt: document.getElementById('e-sdt').value.trim(),
-        ma_vi_tri: document.getElementById('e-vitri').value.trim()
+        email: document.getElementById('e-email').value.trim(),
+        ngay_vao_lam: document.getElementById('e-ngayvaolam').value,
+        ma_vi_tri: document.getElementById('e-vitri').value.trim(),
+        ma_ch: document.getElementById('e-ma_ch').value.trim(),
     };
 
     const method = isEdit ? 'PUT' : 'POST';
@@ -1130,7 +1139,8 @@ async function submitEmployeeForm() {
             fetchStats();
             fetchEmployees();
         } else {
-            showToast('Có lỗi xảy ra', 'error');
+            const err = await res.json().catch(() => ({}));
+            showToast(err.detail || 'Có lỗi xảy ra', 'error');
         }
     } catch(err) {
         showToast('Lỗi Server', 'error');
@@ -1196,7 +1206,8 @@ async function submitSupplierForm() {
             fetchStats();
             fetchSuppliers();
         } else {
-            showToast('Có lỗi xảy ra', 'error');
+            const err = await res.json().catch(() => ({}));
+            showToast(err.detail || 'Có lỗi xảy ra', 'error');
         }
     } catch(err) {
         showToast('Lỗi Server', 'error');

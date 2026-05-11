@@ -1,6 +1,0 @@
-@echo off
-echo Starting FastAPI Backend...
-start cmd /k "cd backend && call venv\Scripts\activate.bat && uvicorn main:app --reload"
-
-echo Starting Frontend on localhost...
-start cmd /k "cd frontend && python -m http.server 8080"
