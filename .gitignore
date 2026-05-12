@@ -35,7 +35,7 @@ env.bak/
 venv.bak/
 
 # File Database cục bộ
-*.db
+# *.db
 *.sqlite3
 *.sqlite
 os.sqlite
