@@ -1,6 +1,7 @@
 const { PrismaClient } = require("@prisma/client");
 
 let prisma = global.__prismaClient;
+
 if (!prisma) {
   prisma = new PrismaClient({
     log:
@@ -10,6 +11,7 @@ if (!prisma) {
   });
 
   prisma.$on("error", (err) => {
+    // Bỏ qua lỗi unique constraint vì đã xử lý ở route
     if (err && err.code === "P2002") return;
     console.error(err);
   });
@@ -20,4 +22,3 @@ if (!prisma) {
 }
 
 module.exports = { prisma };
-
