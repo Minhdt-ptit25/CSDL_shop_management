@@ -35,7 +35,7 @@ env.bak/
 venv.bak/
 
 # File Database cục bộ
-# *.db
+*.db
 *.sqlite3
 *.sqlite
 os.sqlite
@@ -53,4 +53,5 @@ ehthumbs.db
 Desktop.ini
 
 # node_modules
-./admin_dashboard/backend/node_modules
+node_modules/
+admin_dashboard/backend/node_modules/
