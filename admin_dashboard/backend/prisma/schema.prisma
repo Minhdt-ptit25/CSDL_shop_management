@@ -7,8 +7,9 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+// ── Vị trí / chức vụ ──────────────────────────────────────────────────────────
 model ViTri {
-  ma_vi_tri   String    @id
+  ma_vi_tri   String     @id
   ten_chuc_vu String
   luong       Decimal
   nhanviens   NhanVien[]
@@ -16,92 +17,124 @@ model ViTri {
   @@map("vitri")
 }
 
+// ── Cửa hàng ──────────────────────────────────────────────────────────────────
 model CuaHang {
-  ma_ch    String    @id
-  ten_ch   String
-  dia_chi  String
-  sdt      String    @unique
-  email    String    @unique
+  ma_ch     String     @id
+  ten_ch    String
+  dia_chi   String
+  sdt       String     @unique
+  email     String     @unique
   nhanviens NhanVien[]
 
   @@map("cuahang")
 }
 
+// ── Hạng thành viên (thay thế uudai_hang) ────────────────────────────────────
+model HangThanhVien {
+  ten_hang        String      @id   // 'Vô hạng' | 'Sắt' | 'Đồng' | 'Vàng'
+  diem_toithieu   Int         @default(0)
+  phan_tram_uudai Int         @default(0)
+  khachhang       KhachHang[]
+
+  @@map("hang_thanh_vien")
+}
+
+// ── Khách hàng ────────────────────────────────────────────────────────────────
+model KhachHang {
+  ma_kh         String   @id
+  ho_ten_kh     String
+  sdt           String   @unique
+  diem_tich_luy Int      @default(0)
+  ten_hang      String   @default("Vô hạng")
+
+  hangthanhvien HangThanhVien @relation(fields: [ten_hang], references: [ten_hang])
+  hoadons       HoaDon[]
+
+  @@map("khachhang")
+}
+
+// ── Voucher ───────────────────────────────────────────────────────────────────
+model Voucher {
+  ma_voucher           String   @id
+  mo_ta                String?
+  phan_tram_giam       Int      @default(0)
+  so_tien_giam_toida   Decimal  @default(0)
+  gia_tri_don_toithieu Decimal  @default(0)
+  ngay_bat_dau         DateTime
+  ngay_het_han         DateTime
+  so_luong_phat_hanh   Int      @default(0)
+  so_luong_da_dung     Int      @default(0)
+  hoadons              HoaDon[]
+
+  @@map("voucher")
+}
+
+// ── Nhà cung cấp ─────────────────────────────────────────────────────────────
 model NhaCungCap {
-  ma_ncc     String     @id
+  ma_ncc     String      @id
   ten_ncc    String
   dia_chi    String
-  sdt        String     @unique
-  email      String     @unique
+  sdt        String      @unique
+  email      String      @unique
   sanphams   SanPham[]
   phieunhaps PhieuNhap[]
 
   @@map("nhacungcap")
 }
 
-model KhachHang {
-  ma_kh          String   @id
-  ho_ten_kh      String
-  dia_chi        String
-  sdt            String   @unique
-  email          String   @unique
-  diem_tich_luy  Int      @default(0)
-  hang_thanh_vien String  @default("Thành viên mới")
-  hoadons        HoaDon[]
-
-  @@map("khachhang")
-}
-
+// ── Nhân viên ─────────────────────────────────────────────────────────────────
 model NhanVien {
-  ma_nv       String   @id
-  ho_ten_nv   String
-  ngay_sinh   DateTime
-  gioi_tinh   String
-  dia_chi     String
-  sdt         String   @unique
-  email       String   @unique
+  ma_nv        String      @id
+  ho_ten_nv    String
+  ngay_sinh    DateTime
+  gioi_tinh    String      // 'Nam' | 'Nữ'
+  dia_chi      String
+  sdt          String      @unique
+  email        String      @unique
   ngay_vao_lam DateTime
-  ma_vi_tri   String
-  ma_ch       String
+  ma_vi_tri    String
+  ma_ch        String
 
-  vitri       ViTri    @relation(fields: [ma_vi_tri], references: [ma_vi_tri])
-  cuahang     CuaHang  @relation(fields: [ma_ch], references: [ma_ch])
-  phieunhaps  PhieuNhap[]
-  hoadons     HoaDon[]
+  vitri      ViTri       @relation(fields: [ma_vi_tri], references: [ma_vi_tri])
+  cuahang    CuaHang     @relation(fields: [ma_ch], references: [ma_ch])
+  phieunhaps PhieuNhap[]
+  hoadons    HoaDon[]
 
   @@map("nhanvien")
 }
 
+// ── Sản phẩm ──────────────────────────────────────────────────────────────────
 model SanPham {
-  ma_sp     String      @id
+  ma_sp     String       @id
   ten_sp    String
   danh_muc  String
   chat_lieu String
-  mua_vu    String
-  gioi_tinh String
+  gioi_tinh String       // 'Nam' | 'Nữ' | 'Unisex'
   ma_ncc    String
 
-  nhacungcap NhaCungCap @relation(fields: [ma_ncc], references: [ma_ncc])
+  nhacungcap NhaCungCap  @relation(fields: [ma_ncc], references: [ma_ncc])
   bienthes   BienTheSKU[]
 
   @@map("sanpham")
 }
 
+// ── Biến thể SKU ─────────────────────────────────────────────────────────────
 model BienTheSKU {
-  ma_sku      String   @id
-  ma_sp       String
-  mau_sac     String
-  kich_co     String
-  gia_ban     Decimal
+  ma_sku       String  @id
+  ma_sp        String
+  mau_sac      String
+  kich_co      String
+  gia_ban      Decimal
   so_luong_ton Int     @default(0)
 
-  sanpham     SanPham  @relation(fields: [ma_sp], references: [ma_sp])
-  chitietHoaDons ChiTietHoaDon[]
+  sanpham           SanPham            @relation(fields: [ma_sp], references: [ma_sp])
+  chitietHoaDons    ChiTietHoaDon[]
   chitietPhieuNhaps ChiTietPhieuNhap[]
 
   @@map("bienthesku")
 }
 
+// ── Phiếu nhập ───────────────────────────────────────────────────────────────
 model PhieuNhap {
   ma_pn     String   @id
   ngay_nhap DateTime
@@ -109,52 +142,60 @@ model PhieuNhap {
   ma_ncc    String
   ma_nv     String
 
-  nhacungcap NhaCungCap @relation(fields: [ma_ncc], references: [ma_ncc])
-  nhanvien   NhanVien   @relation(fields: [ma_nv], references: [ma_nv])
+  nhacungcap NhaCungCap       @relation(fields: [ma_ncc], references: [ma_ncc])
+  nhanvien   NhanVien         @relation(fields: [ma_nv], references: [ma_nv])
   chitiet    ChiTietPhieuNhap[]
 
   @@map("phieunhap")
 }
 
+// ── Hóa đơn ──────────────────────────────────────────────────────────────────
 model HoaDon {
-  ma_hd                 String   @id
-  ngay_tao              DateTime
-  tong_tien             Decimal
+  ma_hd                  String   @id
+  ngay_tao               DateTime
+  tong_tien_truoc_giam   Decimal
+  giam_gia_hang          Decimal  @default(0)
+  giam_gia_voucher       Decimal  @default(0)
+  tong_tien_sau_giam     Decimal
   phuong_thuc_thanh_toan String
-  trang_thai            String
-  ma_kh                 String
-  ma_nv                 String
+  trang_thai             String
+  ma_kh                  String
+  ma_nv                  String
+  ma_voucher             String?
 
-  khachhang             KhachHang @relation(fields: [ma_kh], references: [ma_kh])
-  nhanvien              NhanVien  @relation(fields: [ma_nv], references: [ma_nv])
-  chitiet               ChiTietHoaDon[]
+  khachhang KhachHang     @relation(fields: [ma_kh], references: [ma_kh])
+  nhanvien  NhanVien      @relation(fields: [ma_nv], references: [ma_nv])
+  voucher   Voucher?      @relation(fields: [ma_voucher], references: [ma_voucher])
+  chitiet   ChiTietHoaDon[]
 
   @@map("hoadon")
 }
 
+// ── Chi tiết hóa đơn ─────────────────────────────────────────────────────────
+model ChiTietHoaDon {
+  ma_hd      String
+  ma_sku     String
+  so_luong   Int
+  gia_ban    Decimal
+  thanh_tien Decimal
+
+  hoadon HoaDon     @relation(fields: [ma_hd], references: [ma_hd])
+  sku    BienTheSKU @relation(fields: [ma_sku], references: [ma_sku])
+
+  @@id([ma_hd, ma_sku])
+  @@map("chitiethoadon")
+}
+
+// ── Chi tiết phiếu nhập ──────────────────────────────────────────────────────
 model ChiTietPhieuNhap {
   ma_pn    String
   ma_sku   String
   so_luong Int
   gia_nhap Decimal
 
-  phieunhap PhieuNhap @relation(fields: [ma_pn], references: [ma_pn])
+  phieunhap PhieuNhap  @relation(fields: [ma_pn], references: [ma_pn])
   sku       BienTheSKU @relation(fields: [ma_sku], references: [ma_sku])
 
   @@id([ma_pn, ma_sku])
   @@map("chitietphieunhap")
 }
-
-model ChiTietHoaDon {
-  ma_hd    String
-  ma_sku   String
-  so_luong Int
-  gia_ban  Decimal
-
-  hoadon   HoaDon    @relation(fields: [ma_hd], references: [ma_hd])
-  sku      BienTheSKU @relation(fields: [ma_sku], references: [ma_sku])
-
-  @@id([ma_hd, ma_sku])
-  @@map("chitiethoadon")
-}
-
