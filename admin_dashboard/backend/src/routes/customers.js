@@ -1,7 +1,8 @@
 const { Router } = require("express");
 const { prisma } = require("../db/prisma");
-const { requireAdmin } = require("../middleware/adminAuth");
+const { checkRole } = require("../middleware/auth");
 const { isUniqueConstraintError, sendDuplicateError } = require("../utils/prismaHelpers");
+const { determineTier } = require("../utils/customerTier");
 
 const router = Router();
 
@@ -13,9 +14,21 @@ function serialize(row) {
     sdt:            row.sdt,
     email:          row.email,
     diem_tich_luy:  row.diem_tich_luy  ?? 0,
-    hang_thanh_vien: row.hang_thanh_vien ?? "Thành viên mới",
+    ten_hang:       row.ten_hang ?? "Vô hạng",
   };
 }
+
+// GET /customers/:ma_kh
+router.get("/:ma_kh", async (req, res, next) => {
+  try {
+    const { ma_kh } = req.params;
+    const row = await prisma.khachHang.findUnique({ where: { ma_kh } });
+    if (!row) return res.status(404).json({ detail: "Khách hàng không tồn tại" });
+    res.json(serialize(row));
+  } catch (err) {
+    next(err);
+  }
+});
 
 // GET /customers
 router.get("/", async (req, res, next) => {
@@ -30,18 +43,21 @@ router.get("/", async (req, res, next) => {
 });
 
 // POST /customers
-router.post("/", requireAdmin, async (req, res, next) => {
+router.post("/", checkRole("admin", "cashier"), async (req, res, next) => {
   try {
     const data = req.body || {};
+    const points = Number(data.diem_tich_luy || 0);
+    const tier = await determineTier(points);
+
     const created = await prisma.khachHang.create({
       data: {
         ma_kh:          String(data.ma_kh),
         ho_ten_kh:      String(data.ho_ten_kh),
-        dia_chi:        String(data.dia_chi),
+        dia_chi:        data.dia_chi ? String(data.dia_chi) : null,
         sdt:            String(data.sdt),
-        email:          String(data.email),
-        diem_tich_luy:  Number(data.diem_tich_luy || 0),
-        hang_thanh_vien: data.hang_thanh_vien ? String(data.hang_thanh_vien) : undefined,
+        email:          data.email ? String(data.email) : null,
+        diem_tich_luy:  points,
+        ten_hang:       tier,
       },
     });
     res.status(201).json(serialize(created));
@@ -52,22 +68,25 @@ router.post("/", requireAdmin, async (req, res, next) => {
 });
 
 // PUT /customers/:ma_kh
-router.put("/:ma_kh", requireAdmin, async (req, res, next) => {
+router.put("/:ma_kh", checkRole("admin", "cashier"), async (req, res, next) => {
   try {
     const { ma_kh } = req.params;
     const existing = await prisma.khachHang.findUnique({ where: { ma_kh } });
     if (!existing) return res.status(404).json({ detail: "Khách hàng không tồn tại" });
 
     const data = req.body || {};
+    const points = data.diem_tich_luy !== undefined ? Number(data.diem_tich_luy) : existing.diem_tich_luy;
+    const tier = await determineTier(points);
+
     const updated = await prisma.khachHang.update({
       where: { ma_kh },
       data: {
-        ho_ten_kh:      String(data.ho_ten_kh),
-        dia_chi:        String(data.dia_chi),
-        sdt:            String(data.sdt),
-        email:          String(data.email),
-        diem_tich_luy:  Number(data.diem_tich_luy || 0),
-        hang_thanh_vien: data.hang_thanh_vien ? String(data.hang_thanh_vien) : undefined,
+        ho_ten_kh:      data.ho_ten_kh ? String(data.ho_ten_kh) : undefined,
+        dia_chi:        data.dia_chi !== undefined ? String(data.dia_chi) : undefined,
+        sdt:            data.sdt ? String(data.sdt) : undefined,
+        email:          data.email !== undefined ? String(data.email) : undefined,
+        diem_tich_luy:  points,
+        ten_hang:       tier,
       },
     });
     res.json(serialize(updated));
@@ -77,13 +96,12 @@ router.put("/:ma_kh", requireAdmin, async (req, res, next) => {
 });
 
 // DELETE /customers/:ma_kh
-router.delete("/:ma_kh", requireAdmin, async (req, res, next) => {
+router.delete("/:ma_kh", checkRole("admin"), async (req, res, next) => {
   try {
     const { ma_kh } = req.params;
     const existing = await prisma.khachHang.findUnique({ where: { ma_kh } });
     if (!existing) return res.status(404).json({ detail: "Khách hàng không tồn tại" });
 
-    // Xóa chi tiết hóa đơn → hóa đơn → khách hàng
     const orders = await prisma.hoaDon.findMany({ where: { ma_kh }, select: { ma_hd: true } });
     const orderIds = orders.map((o) => o.ma_hd);
 

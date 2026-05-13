@@ -43,7 +43,9 @@ model HangThanhVien {
 model KhachHang {
   ma_kh         String   @id
   ho_ten_kh     String
+  dia_chi       String?
   sdt           String   @unique
+  email         String?
   diem_tich_luy Int      @default(0)
   ten_hang      String   @default("Vô hạng")
 
@@ -84,16 +86,19 @@ model NhaCungCap {
 
 // ── Nhân viên ─────────────────────────────────────────────────────────────────
 model NhanVien {
-  ma_nv        String      @id
-  ho_ten_nv    String
-  ngay_sinh    DateTime
-  gioi_tinh    String      // 'Nam' | 'Nữ'
-  dia_chi      String
-  sdt          String      @unique
-  email        String      @unique
-  ngay_vao_lam DateTime
-  ma_vi_tri    String
-  ma_ch        String
+  ma_nv         String      @id
+  ho_ten_nv     String
+  ngay_sinh     DateTime
+  gioi_tinh     String      // 'Nam' | 'Nữ'
+  dia_chi       String
+  sdt           String      @unique
+  email         String      @unique
+  ngay_vao_lam  DateTime
+  ma_vi_tri     String
+  ma_ch         String
+  ten_dang_nhap String      @unique
+  mat_khau_hash String
+  vai_tro       String      // 'admin' | 'cashier' | 'warehouse'
 
   vitri      ViTri       @relation(fields: [ma_vi_tri], references: [ma_vi_tri])
   cuahang    CuaHang     @relation(fields: [ma_ch], references: [ma_ch])

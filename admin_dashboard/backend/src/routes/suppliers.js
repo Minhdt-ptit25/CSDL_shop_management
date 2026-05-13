@@ -1,6 +1,6 @@
 const { Router } = require("express");
 const { prisma } = require("../db/prisma");
-const { requireAdmin } = require("../middleware/adminAuth");
+const { checkRole } = require("../middleware/auth");
 const { isUniqueConstraintError, sendDuplicateError } = require("../utils/prismaHelpers");
 
 const router = Router();
@@ -15,6 +15,18 @@ function serialize(row) {
   };
 }
 
+// GET /suppliers/:ma_ncc
+router.get("/:ma_ncc", async (req, res, next) => {
+  try {
+    const { ma_ncc } = req.params;
+    const row = await prisma.nhaCungCap.findUnique({ where: { ma_ncc } });
+    if (!row) return res.status(404).json({ detail: "Nhà cung cấp không tồn tại" });
+    res.json(serialize(row));
+  } catch (err) {
+    next(err);
+  }
+});
+
 // GET /suppliers
 router.get("/", async (req, res, next) => {
   try {
@@ -28,7 +40,7 @@ router.get("/", async (req, res, next) => {
 });
 
 // POST /suppliers
-router.post("/", requireAdmin, async (req, res, next) => {
+router.post("/", checkRole("admin", "warehouse"), async (req, res, next) => {
   try {
     const data = req.body || {};
     const created = await prisma.nhaCungCap.create({
@@ -48,7 +60,7 @@ router.post("/", requireAdmin, async (req, res, next) => {
 });
 
 // PUT /suppliers/:ma_ncc
-router.put("/:ma_ncc", requireAdmin, async (req, res, next) => {
+router.put("/:ma_ncc", checkRole("admin", "warehouse"), async (req, res, next) => {
   try {
     const { ma_ncc } = req.params;
     const existing = await prisma.nhaCungCap.findUnique({ where: { ma_ncc } });
@@ -71,13 +83,12 @@ router.put("/:ma_ncc", requireAdmin, async (req, res, next) => {
 });
 
 // DELETE /suppliers/:ma_ncc
-router.delete("/:ma_ncc", requireAdmin, async (req, res, next) => {
+router.delete("/:ma_ncc", checkRole("admin"), async (req, res, next) => {
   try {
     const { ma_ncc } = req.params;
     const existing = await prisma.nhaCungCap.findUnique({ where: { ma_ncc } });
     if (!existing) return res.status(404).json({ detail: "Nhà cung cấp không tồn tại" });
 
-    // Xóa sản phẩm và các bảng liên quan của NCC
     const products = await prisma.sanPham.findMany({ where: { ma_ncc }, select: { ma_sp: true } });
     const productIds = products.map((p) => p.ma_sp);
 
@@ -92,7 +103,6 @@ router.delete("/:ma_ncc", requireAdmin, async (req, res, next) => {
     await prisma.bienTheSKU.deleteMany({ where: { ma_sp: { in: productIds } } });
     await prisma.sanPham.deleteMany({ where: { ma_ncc } });
 
-    // Xóa phiếu nhập liên quan
     const imports = await prisma.phieuNhap.findMany({ where: { ma_ncc }, select: { ma_pn: true } });
     const importIds = imports.map((i) => i.ma_pn);
     await prisma.chiTietPhieuNhap.deleteMany({ where: { ma_pn: { in: importIds } } });

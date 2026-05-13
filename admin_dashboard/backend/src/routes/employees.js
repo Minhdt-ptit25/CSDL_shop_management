@@ -1,6 +1,6 @@
 const { Router } = require("express");
 const { prisma } = require("../db/prisma");
-const { requireAdmin } = require("../middleware/adminAuth");
+const { checkRole } = require("../middleware/auth");
 const { toDateOnlyString } = require("../utils/serialize");
 const { isUniqueConstraintError, sendDuplicateError } = require("../utils/prismaHelpers");
 
@@ -21,8 +21,20 @@ function serialize(row) {
   };
 }
 
+// GET /employees/:ma_nv
+router.get("/:ma_nv", checkRole("admin"), async (req, res, next) => {
+  try {
+    const { ma_nv } = req.params;
+    const row = await prisma.nhanVien.findUnique({ where: { ma_nv } });
+    if (!row) return res.status(404).json({ detail: "Nhân viên không tồn tại" });
+    res.json(serialize(row));
+  } catch (err) {
+    next(err);
+  }
+});
+
 // GET /employees
-router.get("/", async (req, res, next) => {
+router.get("/", checkRole("admin"), async (req, res, next) => {
   try {
     const skip = Number(req.query.skip  || 0);
     const take = Number(req.query.limit || 100);
@@ -34,7 +46,7 @@ router.get("/", async (req, res, next) => {
 });
 
 // POST /employees
-router.post("/", requireAdmin, async (req, res, next) => {
+router.post("/", checkRole("admin"), async (req, res, next) => {
   try {
     const data = req.body || {};
 
@@ -48,14 +60,17 @@ router.post("/", requireAdmin, async (req, res, next) => {
       data: {
         ma_nv:        String(data.ma_nv),
         ho_ten_nv:    String(data.ho_ten_nv),
-        ngay_sinh,
+        ngay_sinh:    new Date(ngay_sinh),
         gioi_tinh:    String(data.gioi_tinh),
         dia_chi:      String(data.dia_chi),
         sdt:          String(data.sdt),
         email:        String(data.email),
-        ngay_vao_lam,
+        ngay_vao_lam: new Date(ngay_vao_lam),
         ma_vi_tri:    String(data.ma_vi_tri),
         ma_ch:        String(data.ma_ch),
+        ten_dang_nhap: String(data.ten_dang_nhap || data.ma_nv),
+        mat_khau_hash: "$2b$10$5XbCCqwl7PgTQlCgSm2bWusPPTA3kYWiqaXjD.mAlymWBsBRc/MyW",
+        vai_tro:      String(data.vai_tro || "cashier"),
       },
     });
     res.status(201).json(serialize(created));
@@ -66,7 +81,7 @@ router.post("/", requireAdmin, async (req, res, next) => {
 });
 
 // PUT /employees/:ma_nv
-router.put("/:ma_nv", requireAdmin, async (req, res, next) => {
+router.put("/:ma_nv", checkRole("admin"), async (req, res, next) => {
   try {
     const { ma_nv } = req.params;
     const existing = await prisma.nhanVien.findUnique({ where: { ma_nv } });
@@ -77,12 +92,12 @@ router.put("/:ma_nv", requireAdmin, async (req, res, next) => {
       where: { ma_nv },
       data: {
         ho_ten_nv:    data.ho_ten_nv    ? String(data.ho_ten_nv)                : undefined,
-        ngay_sinh:    data.ngay_sinh    ? toDateOnlyString(data.ngay_sinh)       : undefined,
+        ngay_sinh:    data.ngay_sinh    ? new Date(toDateOnlyString(data.ngay_sinh)) : undefined,
         gioi_tinh:    data.gioi_tinh    ? String(data.gioi_tinh)                : undefined,
         dia_chi:      data.dia_chi      ? String(data.dia_chi)                  : undefined,
         sdt:          data.sdt          ? String(data.sdt)                      : undefined,
         email:        data.email        ? String(data.email)                    : undefined,
-        ngay_vao_lam: data.ngay_vao_lam ? toDateOnlyString(data.ngay_vao_lam)   : undefined,
+        ngay_vao_lam: data.ngay_vao_lam ? new Date(toDateOnlyString(data.ngay_vao_lam)) : undefined,
         ma_vi_tri:    data.ma_vi_tri    ? String(data.ma_vi_tri)                : undefined,
         ma_ch:        data.ma_ch        ? String(data.ma_ch)                    : undefined,
       },
@@ -94,19 +109,17 @@ router.put("/:ma_nv", requireAdmin, async (req, res, next) => {
 });
 
 // DELETE /employees/:ma_nv
-router.delete("/:ma_nv", requireAdmin, async (req, res, next) => {
+router.delete("/:ma_nv", checkRole("admin"), async (req, res, next) => {
   try {
     const { ma_nv } = req.params;
     const existing = await prisma.nhanVien.findUnique({ where: { ma_nv } });
     if (!existing) return res.status(404).json({ detail: "Nhân viên không tồn tại" });
 
-    // Xóa hóa đơn liên quan
     const orders = await prisma.hoaDon.findMany({ where: { ma_nv }, select: { ma_hd: true } });
     const orderIds = orders.map((o) => o.ma_hd);
     await prisma.chiTietHoaDon.deleteMany({ where: { ma_hd: { in: orderIds } } });
     await prisma.hoaDon.deleteMany({ where: { ma_nv } });
 
-    // Xóa phiếu nhập liên quan
     const imports = await prisma.phieuNhap.findMany({ where: { ma_nv }, select: { ma_pn: true } });
     const importIds = imports.map((i) => i.ma_pn);
     await prisma.chiTietPhieuNhap.deleteMany({ where: { ma_pn: { in: importIds } } });

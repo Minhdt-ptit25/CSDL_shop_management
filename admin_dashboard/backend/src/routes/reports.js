@@ -35,7 +35,7 @@ router.get("/sales-monthly", async (_req, res, next) => {
     const rows = await prisma.$queryRaw`
       SELECT
         strftime('%Y-%m', ngay_tao) AS month,
-        SUM(tong_tien) AS revenue
+        SUM(tong_tien_sau_giam) AS revenue
       FROM hoadon
       GROUP BY month
       ORDER BY month
@@ -57,8 +57,8 @@ router.get("/sales-yearly", async (_req, res, next) => {
   try {
     const rows = await prisma.$queryRaw`
       SELECT
-        strftime('%Y', ngay_tao) AS year,
-        SUM(tong_tien) AS revenue
+        strftime('%Y-%m', ngay_tao) AS year,
+        SUM(tong_tien_sau_giam) AS revenue
       FROM hoadon
       GROUP BY year
       ORDER BY year

@@ -1,6 +1,6 @@
 const { Router } = require("express");
 const { prisma } = require("../db/prisma");
-const { requireAdmin } = require("../middleware/adminAuth");
+const { checkRole } = require("../middleware/auth");
 const { isUniqueConstraintError, sendDuplicateError } = require("../utils/prismaHelpers");
 
 const router = Router();
@@ -11,11 +11,22 @@ function serialize(row) {
     ten_sp:   row.ten_sp,
     danh_muc: row.danh_muc,
     chat_lieu: row.chat_lieu,
-    mua_vu:   row.mua_vu,
     gioi_tinh: row.gioi_tinh,
     ma_ncc:   row.ma_ncc,
   };
 }
+
+// GET /products/:ma_sp
+router.get("/:ma_sp", async (req, res, next) => {
+  try {
+    const { ma_sp } = req.params;
+    const row = await prisma.sanPham.findUnique({ where: { ma_sp } });
+    if (!row) return res.status(404).json({ detail: "Sản phẩm không tồn tại" });
+    res.json(serialize(row));
+  } catch (err) {
+    next(err);
+  }
+});
 
 // GET /products
 router.get("/", async (req, res, next) => {
@@ -30,18 +41,15 @@ router.get("/", async (req, res, next) => {
 });
 
 // POST /products
-router.post("/", requireAdmin, async (req, res, next) => {
+router.post("/", checkRole("admin", "warehouse"), async (req, res, next) => {
   try {
     const data = req.body || {};
-    // BUG FIX: code gốc dùng prisma.SanPham (chữ hoa S) → sẽ bị lỗi runtime
-    // Prisma client model name phải viết thường chữ đầu: prisma.sanPham
     const created = await prisma.sanPham.create({
       data: {
         ma_sp:    String(data.ma_sp),
         ten_sp:   String(data.ten_sp),
         danh_muc: String(data.danh_muc),
         chat_lieu: String(data.chat_lieu),
-        mua_vu:   String(data.mua_vu),
         gioi_tinh: String(data.gioi_tinh),
         ma_ncc:   String(data.ma_ncc),
       },
@@ -54,7 +62,7 @@ router.post("/", requireAdmin, async (req, res, next) => {
 });
 
 // PUT /products/:ma_sp
-router.put("/:ma_sp", requireAdmin, async (req, res, next) => {
+router.put("/:ma_sp", checkRole("admin", "warehouse"), async (req, res, next) => {
   try {
     const { ma_sp } = req.params;
     const existing = await prisma.sanPham.findUnique({ where: { ma_sp } });
@@ -64,12 +72,11 @@ router.put("/:ma_sp", requireAdmin, async (req, res, next) => {
     const updated = await prisma.sanPham.update({
       where: { ma_sp },
       data: {
-        ten_sp:    String(data.ten_sp),
-        danh_muc:  String(data.danh_muc),
-        chat_lieu: String(data.chat_lieu),
-        mua_vu:    String(data.mua_vu),
-        gioi_tinh: String(data.gioi_tinh),
-        ma_ncc:    String(data.ma_ncc),
+        ten_sp:    data.ten_sp ? String(data.ten_sp) : undefined,
+        danh_muc:  data.danh_muc ? String(data.danh_muc) : undefined,
+        chat_lieu: data.chat_lieu ? String(data.chat_lieu) : undefined,
+        gioi_tinh: data.gioi_tinh ? String(data.gioi_tinh) : undefined,
+        ma_ncc:    data.ma_ncc ? String(data.ma_ncc) : undefined,
       },
     });
     res.json(serialize(updated));
@@ -79,14 +86,12 @@ router.put("/:ma_sp", requireAdmin, async (req, res, next) => {
 });
 
 // DELETE /products/:ma_sp
-router.delete("/:ma_sp", requireAdmin, async (req, res, next) => {
+router.delete("/:ma_sp", checkRole("admin"), async (req, res, next) => {
   try {
     const { ma_sp } = req.params;
     const existing = await prisma.sanPham.findUnique({ where: { ma_sp } });
     if (!existing) return res.status(404).json({ detail: "Sản phẩm không tồn tại" });
 
-    // Xóa theo thứ tự để tránh lỗi foreign key:
-    // ChiTietHoaDon → ChiTietPhieuNhap → BienTheSKU → SanPham
     const skus = await prisma.bienTheSKU.findMany({ where: { ma_sp } });
     const skuIds = skus.map((s) => s.ma_sku);
 

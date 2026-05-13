@@ -4,31 +4,48 @@ const { toNumber } = require("../utils/serialize");
 
 const router = Router();
 
-router.get("/", async (_req, res, next) => {
+// GET /stats/low-stock
+router.get("/low-stock", async (req, res, next) => {
   try {
-    const [totalProducts, totalOrders, totalCustomers] = await Promise.all([
-      prisma.sanPham.count(),
+    const threshold = Number(req.query.threshold || 10);
+    const skus = await prisma.bienTheSKU.findMany({
+      where: { so_luong_ton: { lt: threshold } },
+      include: { sanpham: true },
+      orderBy: { so_luong_ton: "asc" },
+    });
+
+    const result = skus.map((sku) => ({
+      ma_sku: sku.ma_sku,
+      ten_sp: sku.sanpham.ten_sp,
+      mau_sac: sku.mau_sac,
+      kich_co: sku.kich_co,
+      so_luong_ton: sku.so_luong_ton,
+      gia_ban: toNumber(sku.gia_ban),
+    }));
+
+    res.json(result);
+  } catch (err) {
+    next(err);
+  }
+});
+
+// GET /stats/summary OR GET /stats
+router.get(["/", "/summary"], async (req, res, next) => {
+  try {
+    const [totalOrders, totalRevenue, totalCustomers, totalProducts, lowStockCount] = await Promise.all([
       prisma.hoaDon.count(),
+      prisma.hoaDon.aggregate({ _sum: { tong_tien_sau_giam: true } }),
       prisma.khachHang.count(),
+      prisma.sanPham.count(),
+      prisma.bienTheSKU.count({ where: { so_luong_ton: { lt: 10 } } }),
     ]);
-
-    const [sales, purchases] = await Promise.all([
-      prisma.hoaDon.findMany({ select: { tong_tien: true } }),
-      prisma.phieuNhap.findMany({ select: { tong_tien: true } }),
-    ]);
-
-    const salesRevenue  = sales.reduce((sum, r) => sum + (toNumber(r.tong_tien) || 0), 0);
-    const purchaseCost  = purchases.reduce((sum, r) => sum + (toNumber(r.tong_tien) || 0), 0);
-    const netProfit     = salesRevenue - purchaseCost;
 
     res.json({
-      total_revenue:   salesRevenue,
-      total_orders:    totalOrders,
-      total_products:  totalProducts,
+      total_orders: totalOrders,
+      total_revenue: toNumber(totalRevenue._sum.tong_tien_sau_giam || 0),
       total_customers: totalCustomers,
-      sales_revenue:   salesRevenue,
-      purchase_cost:   purchaseCost,
-      net_profit:      netProfit,
+      total_products: totalProducts,
+      low_stock_count: lowStockCount,
     });
   } catch (err) {
     next(err);
