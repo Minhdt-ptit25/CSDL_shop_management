@@ -351,7 +351,6 @@ async function fetchProducts() {
                         </div>
                     </td>
                     <td class="text-center">${product.danh_muc}</td>
-                    <td class="text-center"><span class="badge-info">${product.mua_vu}</span></td>
                 `;
                 dashboardBody.appendChild(tr);
             }
@@ -364,7 +363,6 @@ async function fetchProducts() {
                     <td><div class="table-info-heading">${product.ten_sp}</div></td>
                     <td class="text-center">${product.danh_muc}</td>
                     <td class="text-center">${product.chat_lieu}</td>
-                    <td class="text-center"><span class="badge-info">${product.mua_vu}</span></td>
                     <td class="text-center">${product.gioi_tinh}</td>
                     <td class="text-center">${product.ma_ncc}</td>
                     <td class="text-center">
@@ -398,9 +396,7 @@ async function fetchCustomers() {
             tr.innerHTML = `
                 <td class="text-center"><span class="badge-secondary border-0">${item.ma_kh}</span></td>
                 <td><div class="table-info-heading">${item.ho_ten_kh}</div></td>
-                <td>${item.dia_chi}</td>
                 <td class="text-center">${item.sdt}</td>
-                <td>${item.email}</td>
                 <td class="text-center">${item.diem_tich_luy}</td>
                 <td class="text-center"><span class="badge-info">${item.hang_thanh_vien}</span></td>
                 <td class="text-center">
@@ -431,7 +427,7 @@ async function fetchOrders() {
             tr.innerHTML = `
                 <td class="text-center"><span class="badge-secondary border-0">${item.ma_hd}</span></td>
                 <td class="text-center">${item.ngay_tao}</td>
-                <td class="text-center" style="font-weight:bold;">${formatCurrency(item.tong_tien)}</td>
+                <td class="text-center" style="font-weight:bold;">${formatCurrency(item.tong_tien_sau_giam)}</td>
                 <td class="text-center">${item.phuong_thuc_thanh_toan}</td>
                 <td class="text-center"><span class="badge-info">${item.trang_thai}</span></td>
                 <td class="text-center">${item.ma_kh}</td>
@@ -767,7 +763,6 @@ async function openEditProductModal(ma_sp) {
         document.getElementById('p-soluong').value = p.so_luong_ton || 0;
         document.getElementById('p-danhmuc').value = p.danh_muc || '';
         document.getElementById('p-chatlieu').value = p.chat_lieu || '';
-        document.getElementById('p-muavu').value = p.mua_vu || '';
         document.getElementById('p-gioitinh').value = p.gioi_tinh || '';
         document.getElementById('p-ma_ncc').value = p.ma_ncc || '';
         openModal('modal-product');
@@ -789,7 +784,6 @@ async function submitProductForm() {
         so_luong_ton: parseInt(document.getElementById('p-soluong').value) || 0,
         danh_muc: document.getElementById('p-danhmuc').value.trim() || 'Thời Trang',
         chat_lieu: document.getElementById('p-chatlieu').value.trim() || 'Cotton',
-        mua_vu: document.getElementById('p-muavu').value.trim() || 'All',
         gioi_tinh: document.getElementById('p-gioitinh').value.trim() || 'Unisex',
         ma_ncc: document.getElementById('p-ma_ncc').value.trim(),
     };
@@ -911,7 +905,6 @@ function renderFilteredProducts(products) {
             <td><div class="table-info-heading">${product.ten_sp}</div></td>
             <td class="text-center">${product.danh_muc}</td>
             <td class="text-center">${product.chat_lieu}</td>
-            <td class="text-center"><span class="badge-info">${product.mua_vu}</span></td>
             <td class="text-center">${product.gioi_tinh}</td>
             <td class="text-center">${product.ma_ncc}</td>
             <td class="text-center">
@@ -948,9 +941,7 @@ async function openEditCustomerModal(ma_kh) {
         document.getElementById('c-ma_kh').value = c.ma_kh;
         document.getElementById('c-ma_kh').readOnly = true;
         document.getElementById('c-hoten').value = c.ho_ten_kh || '';
-        document.getElementById('c-diachi').value = c.dia_chi || '';
         document.getElementById('c-sdt').value = c.sdt || '';
-        document.getElementById('c-email').value = c.email || '';
         document.getElementById('c-diem').value = c.diem_tich_luy || 0;
         document.getElementById('c-hang').value = getMemberTier(c.diem_tich_luy || 0);
         
@@ -969,9 +960,7 @@ async function submitCustomerForm() {
     const payload = {
         ma_kh: ma_kh,
         ho_ten_kh: document.getElementById('c-hoten').value.trim(),
-        dia_chi: document.getElementById('c-diachi').value.trim(),
         sdt: document.getElementById('c-sdt').value.trim(),
-        email: document.getElementById('c-email').value.trim(),
         diem_tich_luy: points,
         hang_thanh_vien: getMemberTier(points)
     };
@@ -1022,7 +1011,7 @@ async function openEditOrderModal(ma_hd) {
         document.getElementById('o-ma_kh').value = o.ma_kh || '';
         document.getElementById('o-ma_nv').value = o.ma_nv || '';
         document.getElementById('o-ngay').value = o.ngay_tao || '';
-        document.getElementById('o-tong').value = o.tong_tien || 0;
+        document.getElementById('o-tong').value = o.tong_tien_sau_giam || 0;
         document.getElementById('o-tt').value = o.phuong_thuc_thanh_toan || 'Cash';
         document.getElementById('o-trangthai').value = o.trang_thai || 'Pending';
         
@@ -1042,7 +1031,8 @@ async function submitOrderForm() {
         ma_kh: document.getElementById('o-ma_kh').value.trim(),
         ma_nv: document.getElementById('o-ma_nv').value.trim(),
         ngay_tao: document.getElementById('o-ngay').value,
-        tong_tien: parseFloat(document.getElementById('o-tong').value) || 0,
+        tong_tien_sau_giam: parseFloat(document.getElementById('o-tong').value) || 0,
+        tong_tien_truoc_giam: parseFloat(document.getElementById('o-tong').value) || 0,
         phuong_thuc_thanh_toan: document.getElementById('o-tt').value,
         trang_thai: document.getElementById('o-trangthai').value
     };
@@ -1244,9 +1234,7 @@ async function applyFilterCustomer() {
                 tr.innerHTML = `
                     <td class="text-center"><span class="badge-secondary border-0">${item.ma_kh}</span></td>
                     <td>${item.ho_ten_kh}</td>
-                    <td>${item.dia_chi || ''}</td>
                     <td class="text-center">${item.sdt || ''}</td>
-                    <td>${item.email || ''}</td>
                     <td class="text-center">${item.diem_tich_luy}</td>
                     <td class="text-center">${item.hang_thanh_vien}</td>
                     <td class="text-center">
@@ -1301,7 +1289,7 @@ async function applyFilterOrder() {
                 tr.innerHTML = `
                     <td class="text-center"><span class="badge-secondary border-0">${item.ma_hd}</span></td>
                     <td class="text-center">${item.ngay_tao}</td>
-                    <td class="text-center">${item.tong_tien.toLocaleString('vi-VN')} đ</td>
+                    <td class="text-center">${(item.tong_tien_sau_giam||0).toLocaleString('vi-VN')} đ</td>
                     <td class="text-center">${item.phuong_thuc_thanh_toan}</td>
                     <td class="text-center">${item.trang_thai}</td>
                     <td class="text-center">${item.ma_kh}</td>
