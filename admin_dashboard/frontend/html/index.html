@@ -75,6 +75,12 @@
                                 Đơn hàng
                             </a>
                         </li>
+                        <li id="menu-imports" style="display: none;">
+                            <a href="#" class="nav-link" data-view="imports">
+                                <i class="metismenu-icon fas fa-file-import"></i>
+                                Nhập hàng
+                            </a>
+                        </li>
                         <li>
                             <a href="#" class="nav-link" data-view="employees">
                                 <i class="metismenu-icon fas fa-id-badge"></i>
@@ -566,6 +572,61 @@
                         </div>
                     </div>
 
+                    <!-- View: Imports (Admin + Warehouse) -->
+                    <div id="view-imports" class="app-view">
+                        <div class="app-page-title">
+                            <div class="page-title-wrapper"
+                                style="display: flex; justify-content: space-between; width: 100%;">
+                                <div class="page-title-heading">
+                                    <div class="page-title-icon"><i
+                                            class="fas fa-file-import icon-gradient bg-arielle-smile"></i></div>
+                                    <div>Quản lý Nhập hàng<div class="page-title-subheading">Quản lý phiếu nhập hàng từ nhà cung cấp.</div>
+                                    </div>
+                                </div>
+                                <div class="page-title-actions">
+                                    <button class="btn btn-primary" onclick="openAddImportModal()"><i
+                                            class="fas fa-plus"></i> Tạo Phiếu nhập</button>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-12">
+                                <div class="main-card mb-3 card">
+                                    <div class="card-header">
+                                        <span>Danh sách Phiếu nhập</span>
+                                        <div class="table-controls">
+                                            <input type="text" id="search-imports" class="table-search-input"
+                                                placeholder="Tìm phiếu nhập..."
+                                                oninput="filterTable('crud-imports-body','search-imports')">
+                                        </div>
+                                    </div>
+                                    <div class="table-responsive">
+                                        <table
+                                            class="align-middle mb-0 table table-borderless table-striped table-hover">
+                                            <thead>
+                                                <tr>
+                                                    <th class="text-center sortable" data-col="0">Mã PN</th>
+                                                    <th class="text-center sortable" data-col="1">Ngày nhập</th>
+                                                    <th class="text-center sortable" data-col="2">Mã NCC</th>
+                                                    <th class="text-center sortable" data-col="3">Mã NV</th>
+                                                    <th class="text-center sortable" data-col="4">Số lượng nhập</th>
+                                                    <th class="text-center sortable" data-col="5">Giá nhập (avg)</th>
+                                                    <th class="text-center sortable" data-col="6">Tổng tiền</th>
+                                                    <th class="text-center">Hành động</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody id="crud-imports-body">
+                                                <tr>
+                                                    <td colspan="8" class="text-center">Đang tải dữ liệu...</td>
+                                                </tr>
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
                     <!-- View: Requests (Admin Only) -->
                     <div id="view-requests" class="app-view">
                         <div class="app-page-title">
@@ -899,6 +960,85 @@
         <div class="modal-footer">
             <button class="btn btn-primary" onclick="submitOrderForm()"><i class="fas fa-save"></i> Xác nhận thanh toán</button>
             <button class="btn btn-secondary" onclick="closeAllModals()"><i class="fas fa-times"></i> Hủy</button>
+        </div>
+    </div>
+
+    <!-- Import Form Modal -->
+    <div id="modal-import" class="modal-box" style="display: none; max-width: 700px;">
+        <div class="modal-header">
+            <h5 id="modal-import-title">Tạo Phiếu nhập hàng</h5>
+            <button type="button" class="close" onclick="closeAllModals()">&times;</button>
+        </div>
+        <div class="modal-body" style="max-height: 80vh; overflow-y: auto;">
+            <form id="form-import" onsubmit="event.preventDefault(); submitImportForm();">
+                <div class="form-group row">
+                    <label class="col-sm-4 col-form-label">Mã phiếu nhập</label>
+                    <div class="col-sm-8">
+                        <input type="text" id="im-ma_pn" class="form-control" placeholder="Để trống để tự động tạo">
+                        <small class="form-text text-muted">Tự động tạo theo thời gian nếu để trống.</small>
+                    </div>
+                </div>
+                <div class="form-group row">
+                    <label class="col-sm-4 col-form-label">Mã NCC <span class="text-danger">*</span></label>
+                    <div class="col-sm-8">
+                        <input type="text" id="im-ma_ncc" class="form-control" placeholder="Ví dụ: NCC01" required>
+                    </div>
+                </div>
+                <div class="form-group row">
+                    <label class="col-sm-4 col-form-label">Ngày nhập</label>
+                    <div class="col-sm-8">
+                        <input type="text" id="im-ngay_nhap" class="form-control" readonly
+                            style="background:#f0f8ff; cursor:default; font-weight:600;">
+                        <small class="form-text text-muted">Tự động theo thời gian tạo phiếu.</small>
+                    </div>
+                </div>
+                <div class="form-group row">
+                    <label class="col-sm-4 col-form-label">Nhân viên</label>
+                    <div class="col-sm-8">
+                        <input type="text" id="im-ma_nv" class="form-control" readonly
+                            style="background:#f0f8ff; cursor:default; font-weight:600;">
+                        <small class="form-text text-muted">Tự động lấy theo tài khoản đăng nhập.</small>
+                    </div>
+                </div>
+
+                <label class="col-form-label"><strong>Danh sách sản phẩm nhập</strong></label>
+                <div id="import-items-list" class="mb-2">
+                    <!-- Dynamic rows -->
+                </div>
+                <button type="button" class="btn btn-sm btn-outline-primary mb-3" onclick="addImportItem()">
+                    <i class="fas fa-plus"></i> Thêm dòng SKU
+                </button>
+
+                <hr style="margin:0.75rem 0;">
+                <div style="background:#f8f9fa; border-radius:8px; padding:0.85rem 1rem;">
+                    <div class="d-flex justify-content-between mb-1">
+                        <span class="text-muted">Tổng số lượng nhập:</span>
+                        <strong id="im-tong-sl">0</strong>
+                    </div>
+                    <div class="d-flex justify-content-between" style="border-top:1px solid #dee2e6; padding-top:0.5rem;">
+                        <span style="font-size:1rem; font-weight:700;">Tổng tiền nhập:</span>
+                        <strong id="im-tong-tien" style="font-size:1.1rem; color:#d92550;">0 đ</strong>
+                    </div>
+                </div>
+            </form>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-primary" onclick="submitImportForm()"><i class="fas fa-save"></i> Xác nhận nhập hàng</button>
+            <button class="btn btn-secondary" onclick="closeAllModals()"><i class="fas fa-times"></i> Hủy</button>
+        </div>
+    </div>
+
+    <!-- Import Detail Modal (View) -->
+    <div id="modal-import-detail" class="modal-box" style="display: none; max-width: 650px;">
+        <div class="modal-header">
+            <h5>Chi tiết Phiếu nhập</h5>
+            <button type="button" class="close" onclick="closeAllModals()">&times;</button>
+        </div>
+        <div class="modal-body" style="max-height: 75vh; overflow-y: auto;">
+            <div id="import-detail-content"></div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-secondary" onclick="closeAllModals()">Đóng</button>
         </div>
     </div>
 
