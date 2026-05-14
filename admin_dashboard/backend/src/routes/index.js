@@ -8,6 +8,8 @@ const customersRouter = require("./customers");
 const ordersRouter    = require("./orders");
 const employeesRouter = require("./employees");
 const suppliersRouter = require("./suppliers");
+const skusRouter      = require("./skus");
+const vouchersRouter  = require("./vouchers");
 
 const router = Router();
 
@@ -21,5 +23,7 @@ router.use("/customers", customersRouter);
 router.use("/orders",    ordersRouter);
 router.use("/employees", employeesRouter);
 router.use("/suppliers", suppliersRouter);
+router.use("/skus",      skusRouter);
+router.use("/vouchers",  vouchersRouter);
 
 module.exports = router;

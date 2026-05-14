@@ -433,7 +433,7 @@
                                                     <th class="text-center sortable" data-col="1">Ngày tạo</th>
                                                     <th class="text-center sortable" data-col="2">Tổng tiền</th>
                                                     <th class="text-center sortable" data-col="3">Thanh toán</th>
-                                                    <th class="text-center sortable" data-col="4">Trạng thái</th>
+                                                    <th class="text-center sortable" data-col="4">Phương thức thanh toán</th>
                                                     <th class="text-center sortable" data-col="5">Mã KH</th>
                                                     <th class="text-center sortable" data-col="6">Mã NV</th>
                                                     <th class="text-center">Hành động</th>
@@ -821,12 +821,12 @@
     </div>
 
     <!-- 5. Order Form Modal (Add/Edit) -->
-    <div id="modal-order" class="modal-box" style="display: none;">
+    <div id="modal-order" class="modal-box" style="display: none; max-width: 680px;">
         <div class="modal-header">
             <h5 id="modal-order-title">Thêm Đơn hàng</h5>
             <button type="button" class="close" onclick="closeAllModals()">&times;</button>
         </div>
-        <div class="modal-body">
+        <div class="modal-body" style="max-height: 80vh; overflow-y: auto;">
             <form id="form-order" onsubmit="event.preventDefault(); submitOrderForm();">
                 <div class="form-group row">
                     <label class="col-sm-4 col-form-label">Mã HĐ</label>
@@ -834,22 +834,57 @@
                 </div>
                 <div class="form-group row">
                     <label class="col-sm-4 col-form-label">Mã KH</label>
-                    <div class="col-sm-8"><input type="text" id="o-ma_kh" class="form-control" placeholder="KH001" required></div>
+                    <div class="col-sm-8">
+                        <input type="text" id="o-ma_kh" class="form-control" placeholder="KH001" required oninput="onOrderCustomerChange()">
+                    </div>
+                </div>
+                <!-- Hạng thành viên: tự động hiện sau khi nhập mã KH -->
+                <div class="form-group row" id="row-member-info" style="display: none;">
+                    <label class="col-sm-4 col-form-label">Hạng TV</label>
+                    <div class="col-sm-8">
+                        <input type="text" id="o-hang-tv" class="form-control" readonly
+                            style="background: #f0f8ff; font-weight: 600; cursor: default;">
+                    </div>
                 </div>
                 <div class="form-group row">
                     <label class="col-sm-4 col-form-label">Mã Voucher</label>
-                    <div class="col-sm-8"><input type="text" id="o-ma_voucher" class="form-control" placeholder="Nhập mã (nếu có)"></div>
+                    <div class="col-sm-8">
+                        <input type="text" id="o-ma_voucher" class="form-control" placeholder="Nhập mã (nếu có)" oninput="onOrderVoucherChange()">
+                        <small id="o-voucher-msg" class="form-text mt-1" style="display: none;"></small>
+                    </div>
                 </div>
-                
-                <label class="col-sm-4 col-form-label">Danh sách sản phẩm</label>
-                <div id="order-items-list" class="mb-3">
+
+                <label class="col-form-label"><strong>Danh sách sản phẩm</strong></label>
+                <div id="order-items-list" class="mb-2">
                     <!-- Dynamic items will be added here -->
                 </div>
                 <button type="button" class="btn btn-sm btn-outline-primary mb-3" onclick="addOrderItem()">
                     <i class="fas fa-plus"></i> Thêm sản phẩm
                 </button>
-                <div class="form-group row">
-                    <label class="col-sm-4 col-form-label">Thanh toán</label>
+
+                <!-- Price Summary -->
+                <hr style="margin: 0.75rem 0;">
+                <div style="background: #f8f9fa; border-radius: 8px; padding: 0.85rem 1rem;">
+                    <div class="d-flex justify-content-between mb-1">
+                        <span class="text-muted">Tổng tiền hàng:</span>
+                        <strong id="o-tong-hang">0 đ</strong>
+                    </div>
+                    <div class="d-flex justify-content-between mb-1">
+                        <span class="text-muted">Giảm giá hạng TV (<span id="o-pct-hang">0</span>%):</span>
+                        <span class="text-success" id="o-giam-hang">-0 đ</span>
+                    </div>
+                    <div class="d-flex justify-content-between mb-2">
+                        <span class="text-muted">Giảm giá Voucher:</span>
+                        <span class="text-success" id="o-giam-voucher">-0 đ</span>
+                    </div>
+                    <div class="d-flex justify-content-between" style="border-top: 1px solid #dee2e6; padding-top: 0.5rem;">
+                        <span style="font-size: 1rem; font-weight: 700;">Thành tiền:</span>
+                        <strong id="o-thanh-tien" style="font-size: 1.1rem; color: #d92550;">0 đ</strong>
+                    </div>
+                </div>
+
+                <div class="form-group row mt-3">
+                    <label class="col-sm-4 col-form-label">Phương thức TT</label>
                     <div class="col-sm-8">
                         <select id="o-tt" class="form-control">
                             <option value="Tiền mặt">Tiền mặt</option>
@@ -859,11 +894,10 @@
                     </div>
                 </div>
                 <input type="hidden" id="o-is-edit" value="false">
-                <input type="hidden" id="o-is-edit" value="false">
             </form>
         </div>
         <div class="modal-footer">
-            <button class="btn btn-primary" onclick="submitOrderForm()"><i class="fas fa-save"></i> Lưu dữ liệu</button>
+            <button class="btn btn-primary" onclick="submitOrderForm()"><i class="fas fa-save"></i> Xác nhận thanh toán</button>
             <button class="btn btn-secondary" onclick="closeAllModals()"><i class="fas fa-times"></i> Hủy</button>
         </div>
     </div>
