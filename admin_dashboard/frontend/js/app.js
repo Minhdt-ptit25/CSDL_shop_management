@@ -703,6 +703,7 @@ const viewFetchMap = {
     'employees': fetchEmployees,
     'suppliers': fetchSuppliers,
     'requests':  fetchRequests,
+    'imports':   fetchImports,
 };
 
 function initRouting() {
@@ -772,13 +773,17 @@ function checkAuthStatus() {
                 const view = link.getAttribute('data-view');
                 let visible = true;
                 if (user.vai_tro === 'cashier' && !['dashboard', 'customers', 'orders'].includes(view)) visible = false;
-                if (user.vai_tro === 'warehouse' && !['dashboard', 'products', 'suppliers'].includes(view)) visible = false;
+                if (user.vai_tro === 'warehouse' && !['dashboard', 'products', 'suppliers', 'imports'].includes(view)) visible = false;
                 link.parentElement.style.display = visible ? 'block' : 'none';
             });
             
             // Hiện menu Yêu cầu duyệt nếu là admin
             const menuReq = document.getElementById('menu-requests-admin');
             if (menuReq) menuReq.style.display = user.vai_tro === 'admin' ? 'block' : 'none';
+
+            // Hiện menu Nhập hàng nếu là admin hoặc warehouse
+            const menuImports = document.getElementById('menu-imports');
+            if (menuImports) menuImports.style.display = (user.vai_tro === 'admin' || user.vai_tro === 'warehouse') ? 'block' : 'none';
         }
 
         document.body.classList.remove('logged-out-layout');
@@ -945,12 +950,14 @@ document.addEventListener('DOMContentLoaded', () => {
             fetchEmployees();
             fetchSuppliers();
             fetchRequests();
+            fetchImports();
         } else if (user.vai_tro === 'cashier') {
             fetchCustomers();
             fetchOrders();
         } else if (user.vai_tro === 'warehouse') {
             fetchProducts();
             fetchSuppliers();
+            fetchImports();
         }
     }
     
@@ -2129,4 +2136,250 @@ function clearFilterAPI_Supplier() {
     document.getElementById('search-suppliers').value = '';
     fetchSuppliers();
     showToast('Đã xóa bộ lọc', 'info');
+}
+
+// ══════════════════════════════════════════════════════════════════
+// IMPORTS – Nhập hàng
+// ══════════════════════════════════════════════════════════════════
+
+let importItemCounter = 0;
+
+function formatCurrencyVN(num) {
+    const n = Number(num);
+    if (!isFinite(n)) return '0 đ';
+    return n.toLocaleString('vi-VN') + ' đ';
+}
+
+// ── Fetch & render list ──────────────────────────────────────────
+async function fetchImports() {
+    try {
+        const response = await fetch(`${API_BASE_URL}/imports`, {
+            headers: { 'Authorization': `Bearer ${localStorage.getItem('adminToken')}` }
+        });
+        const items = await response.json();
+        const crudBody = document.getElementById('crud-imports-body');
+        if (!crudBody) return;
+        crudBody.innerHTML = '';
+        if (!Array.isArray(items) || items.length === 0) {
+            crudBody.innerHTML = `<tr><td colspan="8" class="text-center">Không có dữ liệu.</td></tr>`;
+            return;
+        }
+        items.forEach(item => {
+            const totalQty = (item.chitiet || []).reduce((s, c) => s + (c.so_luong || 0), 0);
+            const avgPrice = totalQty > 0
+                ? (item.chitiet || []).reduce((s, c) => s + (Number(c.gia_nhap) * c.so_luong), 0) / totalQty
+                : 0;
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td class="text-center"><span class="badge-secondary border-0">${item.ma_pn}</span></td>
+                <td class="text-center">${item.ngay_nhap || ''}</td>
+                <td class="text-center">${item.ma_ncc}</td>
+                <td class="text-center">${item.ma_nv}</td>
+                <td class="text-center">${totalQty.toLocaleString('vi-VN')}</td>
+                <td class="text-center">${formatCurrencyVN(avgPrice)}</td>
+                <td class="text-center" style="font-weight:bold;">${formatCurrencyVN(item.tong_tien)}</td>
+                <td class="text-center">
+                    <div class="btn-group">
+                        <button class="btn btn-sm btn-info" title="Xem chi tiết" onclick="openImportDetail('${item.ma_pn}')"><i class="fas fa-eye"></i></button>
+                        <button class="btn btn-sm btn-danger" title="Xóa (admin)" onclick="deleteImport('${item.ma_pn}')"><i class="fas fa-trash"></i></button>
+                    </div>
+                </td>
+            `;
+            crudBody.appendChild(tr);
+        });
+        initSortable('crud-imports-body');
+    } catch (e) {
+        console.error('fetchImports error', e);
+    }
+}
+
+// ── Open add modal ────────────────────────────────────────────────
+function openAddImportModal() {
+    importItemCounter = 0;
+    document.getElementById('im-ma_pn').value = '';
+    document.getElementById('im-ma_ncc').value = '';
+
+    // Auto-fill current datetime (readonly)
+    const now = new Date();
+    const pad = n => String(n).padStart(2, '0');
+    const dateStr = `${now.getFullYear()}-${pad(now.getMonth()+1)}-${pad(now.getDate())} ${pad(now.getHours())}:${pad(now.getMinutes())}`;
+    document.getElementById('im-ngay_nhap').value = dateStr;
+
+    // Auto-fill employee from token
+    const token = localStorage.getItem('adminToken');
+    const user = parseJwt(token);
+    document.getElementById('im-ma_nv').value = user ? (user.ma_nv || user.sub || '') : '';
+
+    // Clear items list and summary
+    document.getElementById('import-items-list').innerHTML = '';
+    document.getElementById('im-tong-sl').textContent = '0';
+    document.getElementById('im-tong-tien').textContent = '0 đ';
+
+    // Add one blank row
+    addImportItem();
+
+    openModal('modal-import');
+}
+
+// ── Add item row ──────────────────────────────────────────────────
+function addImportItem() {
+    importItemCounter++;
+    const id = importItemCounter;
+    const container = document.getElementById('import-items-list');
+    const row = document.createElement('div');
+    row.className = 'import-item-row';
+    row.id = `import-item-${id}`;
+    row.style.cssText = 'display:grid; grid-template-columns:1fr 90px 110px 36px; gap:6px; margin-bottom:6px; align-items:center;';
+    row.innerHTML = `
+        <input type="text" class="form-control form-control-sm im-sku" placeholder="Mã SKU" oninput="recalcImportTotal()">
+        <input type="number" class="form-control form-control-sm im-qty" placeholder="SL" min="1" value="1" oninput="recalcImportTotal()">
+        <input type="number" class="form-control form-control-sm im-price" placeholder="Giá nhập" min="0" step="1000" value="0" oninput="recalcImportTotal()">
+        <button type="button" class="btn btn-sm btn-outline-danger" onclick="removeImportItem(${id})" title="Xóa dòng"><i class="fas fa-times"></i></button>
+    `;
+    container.appendChild(row);
+    recalcImportTotal();
+}
+
+function removeImportItem(id) {
+    const el = document.getElementById(`import-item-${id}`);
+    if (el) el.remove();
+    recalcImportTotal();
+}
+
+// ── Recalculate totals ─────────────────────────────────────────────
+function recalcImportTotal() {
+    const rows = document.querySelectorAll('.import-item-row');
+    let totalQty = 0, totalMoney = 0;
+    rows.forEach(row => {
+        const qty = parseInt(row.querySelector('.im-qty').value) || 0;
+        const price = parseFloat(row.querySelector('.im-price').value) || 0;
+        totalQty += qty;
+        totalMoney += qty * price;
+    });
+    document.getElementById('im-tong-sl').textContent = totalQty.toLocaleString('vi-VN');
+    document.getElementById('im-tong-tien').textContent = formatCurrencyVN(totalMoney);
+}
+
+// ── Submit form ───────────────────────────────────────────────────
+async function submitImportForm() {
+    const maPn = document.getElementById('im-ma_pn').value.trim();
+    const maNcc = document.getElementById('im-ma_ncc').value.trim();
+
+    if (!maNcc) {
+        showToast('Vui lòng nhập Mã NCC', 'error');
+        return;
+    }
+
+    // Collect items
+    const rows = document.querySelectorAll('.import-item-row');
+    const items = [];
+    let hasError = false;
+    rows.forEach(row => {
+        const ma_sku = row.querySelector('.im-sku').value.trim();
+        const so_luong = parseInt(row.querySelector('.im-qty').value) || 0;
+        const gia_nhap = parseFloat(row.querySelector('.im-price').value) || 0;
+        if (!ma_sku) return; // skip blank
+        if (so_luong <= 0) { hasError = true; return; }
+        items.push({ ma_sku, so_luong, gia_nhap });
+    });
+
+    if (hasError) { showToast('Số lượng nhập phải lớn hơn 0', 'error'); return; }
+    if (items.length === 0) { showToast('Vui lòng thêm ít nhất một dòng SKU', 'error'); return; }
+
+    const payload = { ma_ncc: maNcc, items };
+    if (maPn) payload.ma_pn = maPn;
+
+    try {
+        const res = await fetch(`${API_BASE_URL}/imports`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${localStorage.getItem('adminToken')}`
+            },
+            body: JSON.stringify(payload)
+        });
+        const data = await res.json();
+        if (!res.ok) {
+            showToast(data.detail || 'Lỗi khi tạo phiếu nhập', 'error');
+            return;
+        }
+        showToast(`Tạo phiếu nhập ${data.ma_pn} thành công!`, 'success');
+        closeAllModals();
+        fetchImports();
+    } catch (e) {
+        showToast('Lỗi kết nối server', 'error');
+    }
+}
+
+// ── Delete import (admin only) ────────────────────────────────────
+async function deleteImport(maPn) {
+    const token = localStorage.getItem('adminToken');
+    const user = parseJwt(token);
+    if (!user || user.vai_tro !== 'admin') {
+        showToast('Chỉ Admin mới có quyền xóa phiếu nhập', 'error');
+        return;
+    }
+    if (!confirm(`Xóa phiếu nhập ${maPn}? Tồn kho sẽ được hoàn về.`)) return;
+    try {
+        const res = await fetch(`${API_BASE_URL}/imports/${maPn}`, {
+            method: 'DELETE',
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+        const data = await res.json();
+        if (!res.ok) { showToast(data.detail || 'Lỗi xóa phiếu nhập', 'error'); return; }
+        showToast('Đã xóa phiếu nhập và hoàn tồn kho', 'success');
+        fetchImports();
+    } catch (e) {
+        showToast('Lỗi kết nối server', 'error');
+    }
+}
+
+// ── View detail modal ─────────────────────────────────────────────
+async function openImportDetail(maPn) {
+    try {
+        const res = await fetch(`${API_BASE_URL}/imports`, {
+            headers: { 'Authorization': `Bearer ${localStorage.getItem('adminToken')}` }
+        });
+        const list = await res.json();
+        const item = list.find(i => i.ma_pn === maPn);
+        if (!item) { showToast('Không tìm thấy phiếu nhập', 'error'); return; }
+
+        const rows = (item.chitiet || []).map(c => `
+            <tr>
+                <td class="text-center">${c.ma_sku}</td>
+                <td class="text-center">${c.so_luong.toLocaleString('vi-VN')}</td>
+                <td class="text-center">${formatCurrencyVN(c.gia_nhap)}</td>
+                <td class="text-center" style="font-weight:600;">${formatCurrencyVN(Number(c.gia_nhap) * c.so_luong)}</td>
+            </tr>
+        `).join('');
+
+        document.getElementById('import-detail-content').innerHTML = `
+            <div style="background:#f8f9fa; border-radius:8px; padding:1rem; margin-bottom:1rem;">
+                <div class="row" style="margin:0; gap:0.5rem 0;">
+                    <div class="col-6"><small class="text-muted">Mã phiếu nhập</small><div style="font-weight:700;">${item.ma_pn}</div></div>
+                    <div class="col-6"><small class="text-muted">Ngày nhập</small><div>${item.ngay_nhap}</div></div>
+                    <div class="col-6"><small class="text-muted">Mã NCC</small><div>${item.ma_ncc}</div></div>
+                    <div class="col-6"><small class="text-muted">Mã NV</small><div>${item.ma_nv}</div></div>
+                    <div class="col-12"><small class="text-muted">Tổng tiền nhập</small><div style="font-size:1.1rem;font-weight:700;color:#d92550;">${formatCurrencyVN(item.tong_tien)}</div></div>
+                </div>
+            </div>
+            <h6 style="font-weight:700; margin-bottom:0.5rem;">Chi tiết sản phẩm nhập</h6>
+            <div class="table-responsive">
+                <table class="table table-sm table-bordered" style="font-size:0.875rem;">
+                    <thead class="thead-light">
+                        <tr>
+                            <th class="text-center">Mã SKU</th>
+                            <th class="text-center">Số lượng</th>
+                            <th class="text-center">Giá nhập</th>
+                            <th class="text-center">Thành tiền</th>
+                        </tr>
+                    </thead>
+                    <tbody>${rows}</tbody>
+                </table>
+            </div>
+        `;
+        openModal('modal-import-detail');
+    } catch (e) {
+        showToast('Lỗi tải chi tiết phiếu nhập', 'error');
+    }
 }
