@@ -100,12 +100,12 @@ const formatCurrency = (amount) => {
     return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(amount);
 };
 
+// Ngưỡng điểm theo ERD: Vô hạng < Sắt < Đồng < Vàng
 const getMemberTier = (points) => {
-    if (points >= 450) return 'Kim cương';
-    if (points >= 350) return 'Bạch kim';
     if (points >= 250) return 'Vàng';
-    if (points >= 150) return 'Bạc';
-    return 'Đồng';
+    if (points >= 150) return 'Đồng';
+    if (points >= 50)  return 'Sắt';
+    return 'Vô hạng';
 };
 
 let categorySalesChart = null;
@@ -511,24 +511,35 @@ async function fetchSuppliers() {
 }
 
 // SPA Routing Logic
+const viewFetchMap = {
+    'dashboard': () => { fetchStats(); fetchDashboardCharts(); },
+    'products':  fetchProducts,
+    'customers': fetchCustomers,
+    'orders':    fetchOrders,
+    'employees': fetchEmployees,
+    'suppliers': fetchSuppliers,
+};
+
 function initRouting() {
     const navLinks = document.querySelectorAll('.nav-link[data-view]');
-    const views = document.querySelectorAll('.app-view');
+    const views    = document.querySelectorAll('.app-view');
 
     navLinks.forEach(link => {
         link.addEventListener('click', (e) => {
             e.preventDefault();
-            
+
             navLinks.forEach(l => l.classList.remove('mm-active'));
             views.forEach(v => v.classList.remove('active'));
-            
+
             link.classList.add('mm-active');
-            
-            const targetViewId = 'view-' + link.getAttribute('data-view');
-            const targetView = document.getElementById(targetViewId);
-            if(targetView) {
-                targetView.classList.add('active');
-            }
+
+            const view = link.getAttribute('data-view');
+            const targetView = document.getElementById('view-' + view);
+            if (targetView) targetView.classList.add('active');
+
+            // Reload data của tab vừa mở
+            const fetchFn = viewFetchMap[view];
+            if (fetchFn) fetchFn();
         });
     });
 }
@@ -563,6 +574,11 @@ function checkAuthStatus() {
         const unauthSidebar = document.getElementById('sidebar-unauth');
         if (unauthSidebar) unauthSidebar.style.display = 'none';
 
+        const headerAuth   = document.getElementById('header-auth');
+        const headerUnauth = document.getElementById('header-unauth');
+        if (headerAuth)   headerAuth.style.display   = 'flex';
+        if (headerUnauth) headerUnauth.style.display = 'none';
+
         // Assure a view is active
         if (!document.querySelector('.app-view.active')) {
             const dash = document.getElementById('view-dashboard');
@@ -584,6 +600,11 @@ function checkAuthStatus() {
         if (authSidebar) authSidebar.style.display = 'none';
         const unauthSidebar = document.getElementById('sidebar-unauth');
         if (unauthSidebar) unauthSidebar.style.display = 'flex';
+
+        const headerAuth   = document.getElementById('header-auth');
+        const headerUnauth = document.getElementById('header-unauth');
+        if (headerAuth)   headerAuth.style.display   = 'none';
+        if (headerUnauth) headerUnauth.style.display = 'flex';
 
         const sidebar = document.querySelector('.app-sidebar');
         const mainOuter = document.querySelector('.app-main__outer');
@@ -645,6 +666,22 @@ document.addEventListener('click', () => {
     if (dropdown && menu) {
         dropdown.classList.remove('active');
         menu.classList.remove('active');
+    }
+});
+
+function toggleAdminMenu() {
+    const menu = document.getElementById('admin-menu');
+    if (!menu) return;
+    const isVisible = menu.style.display === 'block';
+    menu.style.display = isVisible ? 'none' : 'block';
+}
+
+// Đóng admin menu khi click ra ngoài
+document.addEventListener('click', (e) => {
+    const group = document.getElementById('admin-dropdown-group');
+    const menu  = document.getElementById('admin-menu');
+    if (menu && group && !group.contains(e.target)) {
+        menu.style.display = 'none';
     }
 });
 
@@ -717,14 +754,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // Auto-refresh tables every 10 seconds (data)
-    setInterval(() => {
-        fetchProducts();
-        fetchCustomers();
-        fetchOrders();
-        fetchEmployees();
-        fetchSuppliers();
-    }, 10000);
+    // Không auto-refresh table — data được reload khi chuyển tab (xem initRouting)
 });
 
 // ===================== MODAL LOGIC =====================
@@ -750,17 +780,16 @@ async function openAddProductModal() {
 async function openEditProductModal(ma_sp) {
     try {
         const res = await fetch(`${API_BASE_URL}/products`);
+        if (!res.ok) return showToast('Lỗi tải dữ liệu SP', 'error');
         const products = await res.json();
         const p = products.find(x => x.ma_sp === ma_sp);
-        if(!p) return showToast('Không tìm thấy SP', 'error');
+        if (!p) return showToast('Không tìm thấy SP', 'error');
 
         document.getElementById('p-is-edit').value = 'true';
         document.getElementById('modal-product-title').innerText = 'Sửa Sản phẩm: ' + ma_sp;
         document.getElementById('p-ma_sp').value = p.ma_sp;
         document.getElementById('p-ma_sp').readOnly = true;
         document.getElementById('p-ten_sp').value = p.ten_sp || '';
-        document.getElementById('p-gia').value = p.gia_ban || p.gia_nhap || 0;
-        document.getElementById('p-soluong').value = p.so_luong_ton || 0;
         document.getElementById('p-danhmuc').value = p.danh_muc || '';
         document.getElementById('p-chatlieu').value = p.chat_lieu || '';
         document.getElementById('p-gioitinh').value = p.gioi_tinh || '';
@@ -777,15 +806,12 @@ async function submitProductForm() {
     if(!ma_sp) return showToast('Vui lòng nhập Mã SP', 'error');
 
     const payload = {
-        ma_sp: ma_sp,
-        ten_sp: document.getElementById('p-ten_sp').value.trim(),
-        gia_ban: parseFloat(document.getElementById('p-gia').value) || 0,
-        gia_nhap: parseFloat(document.getElementById('p-gia').value) || 0,
-        so_luong_ton: parseInt(document.getElementById('p-soluong').value) || 0,
-        danh_muc: document.getElementById('p-danhmuc').value.trim() || 'Thời Trang',
+        ma_sp:     ma_sp,
+        ten_sp:    document.getElementById('p-ten_sp').value.trim(),
+        danh_muc:  document.getElementById('p-danhmuc').value.trim() || 'Thời Trang',
         chat_lieu: document.getElementById('p-chatlieu').value.trim() || 'Cotton',
         gioi_tinh: document.getElementById('p-gioitinh').value.trim() || 'Unisex',
-        ma_ncc: document.getElementById('p-ma_ncc').value.trim(),
+        ma_ncc:    document.getElementById('p-ma_ncc').value.trim(),
     };
 
     const method = isEdit ? 'PUT' : 'POST';
@@ -871,10 +897,8 @@ async function applyAdvancedFilterProduct() {
         const res = await fetch(`${API_BASE_URL}/products`);
         let products = await res.json();
 
-        if (maLoai) products = products.filter(p => (p.ma_loai||'').toLowerCase().includes(maLoai));
-        if (hang) products = products.filter(p => (p.ma_ncc||'').toLowerCase().includes(hang));
-        if (!isNaN(minPrice)) products = products.filter(p => parseFloat(p.gia_ban) >= minPrice || parseFloat(p.gia_nhap) >= minPrice);
-        if (!isNaN(maxPrice)) products = products.filter(p => parseFloat(p.gia_ban) <= maxPrice || parseFloat(p.gia_nhap) <= maxPrice);
+        if (maLoai) products = products.filter(p => (p.danh_muc||'').toLowerCase().includes(maLoai));
+        if (hang)   products = products.filter(p => (p.ma_ncc||'').toLowerCase().includes(hang));
 
         renderFilteredProducts(products);
         closeAllModals();
@@ -925,16 +949,17 @@ async function openAddCustomerModal() {
     document.getElementById('modal-customer-title').innerText = 'Thêm Khách hàng';
     document.getElementById('form-customer').reset();
     document.getElementById('c-ma_kh').readOnly = false;
-    document.getElementById('c-hang').value = 'Đồng';
+    document.getElementById('c-hang').value = 'Vô hạng';
     openModal('modal-customer');
 }
 
 async function openEditCustomerModal(ma_kh) {
     try {
         const res = await fetch(`${API_BASE_URL}/customers`);
+        if (!res.ok) return showToast('Lỗi tải dữ liệu KH', 'error');
         const items = await res.json();
         const c = items.find(x => x.ma_kh === ma_kh);
-        if(!c) return showToast('Không tìm thấy KH', 'error');
+        if (!c) return showToast('Không tìm thấy KH', 'error');
 
         document.getElementById('c-is-edit').value = 'true';
         document.getElementById('modal-customer-title').innerText = 'Sửa Khách hàng: ' + ma_kh;
@@ -1000,9 +1025,10 @@ async function openAddOrderModal() {
 async function openEditOrderModal(ma_hd) {
     try {
         const res = await fetch(`${API_BASE_URL}/orders`);
+        if (!res.ok) return showToast('Lỗi tải dữ liệu HĐ', 'error');
         const items = await res.json();
         const o = items.find(x => x.ma_hd === ma_hd);
-        if(!o) return showToast('Không tìm thấy HĐ', 'error');
+        if (!o) return showToast('Không tìm thấy HĐ', 'error');
 
         document.getElementById('o-is-edit').value = 'true';
         document.getElementById('modal-order-title').innerText = 'Sửa Đơn hàng: ' + ma_hd;
@@ -1072,9 +1098,10 @@ async function openAddEmployeeModal() {
 async function openEditEmployeeModal(ma_nv) {
     try {
         const res = await fetch(`${API_BASE_URL}/employees`);
+        if (!res.ok) return showToast('Lỗi tải dữ liệu NV', 'error');
         const items = await res.json();
         const e = items.find(x => x.ma_nv === ma_nv);
-        if(!e) return showToast('Không tìm thấy NV', 'error');
+        if (!e) return showToast('Không tìm thấy NV', 'error');
 
         document.getElementById('e-is-edit').value = 'true';
         document.getElementById('modal-employee-title').innerText = 'Sửa Nhân viên: ' + ma_nv;
@@ -1149,9 +1176,10 @@ async function openAddSupplierModal() {
 async function openEditSupplierModal(ma_ncc) {
     try {
         const res = await fetch(`${API_BASE_URL}/suppliers`);
+        if (!res.ok) return showToast('Lỗi tải dữ liệu NCC', 'error');
         const items = await res.json();
         const s = items.find(x => x.ma_ncc === ma_ncc);
-        if(!s) return showToast('Không tìm thấy NCC', 'error');
+        if (!s) return showToast('Không tìm thấy NCC', 'error');
 
         document.getElementById('s-is-edit').value = 'true';
         document.getElementById('modal-supplier-title').innerText = 'Sửa Nhà cung cấp: ' + ma_ncc;
