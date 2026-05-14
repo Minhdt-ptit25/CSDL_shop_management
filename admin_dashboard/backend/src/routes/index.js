@@ -10,6 +10,7 @@ const employeesRouter = require("./employees");
 const suppliersRouter = require("./suppliers");
 const skusRouter      = require("./skus");
 const vouchersRouter  = require("./vouchers");
+const importsRouter   = require("./imports");
 
 const router = Router();
 
@@ -25,5 +26,6 @@ router.use("/employees", employeesRouter);
 router.use("/suppliers", suppliersRouter);
 router.use("/skus",      skusRouter);
 router.use("/vouchers",  vouchersRouter);
+router.use("/imports",   importsRouter);
 
 module.exports = router;
