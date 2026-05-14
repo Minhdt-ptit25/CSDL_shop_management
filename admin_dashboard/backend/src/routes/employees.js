@@ -21,6 +21,77 @@ function serialize(row) {
   };
 }
 
+// GET /employees/me - Get current employee info (for all roles)
+router.get("/me", async (req, res, next) => {
+  try {
+    const authorization = req.header("authorization") || "";
+    const token = authorization.startsWith("Bearer ") ? authorization.slice(7).trim() : null;
+    
+    if (!token) {
+      return res.status(401).json({ detail: "Not authenticated" });
+    }
+
+    try {
+      const { verifyAccessToken } = require("../utils/jwt");
+      const decoded = verifyAccessToken(token);
+      const ma_nv = decoded.ma_nv;
+
+      const employee = await prisma.nhanVien.findUnique({ where: { ma_nv } });
+      if (!employee) {
+        return res.status(404).json({ detail: "Nhân viên không tồn tại" });
+      }
+
+      res.json(serialize(employee));
+    } catch {
+      return res.status(401).json({ detail: "Invalid or expired token" });
+    }
+  } catch (err) {
+    next(err);
+  }
+});
+
+// PUT /employees/me - Update current employee info (only allow non-sensitive fields)
+router.put("/me", async (req, res, next) => {
+  try {
+    const authorization = req.header("authorization") || "";
+    const token = authorization.startsWith("Bearer ") ? authorization.slice(7).trim() : null;
+    
+    if (!token) {
+      return res.status(401).json({ detail: "Not authenticated" });
+    }
+
+    try {
+      const { verifyAccessToken } = require("../utils/jwt");
+      const decoded = verifyAccessToken(token);
+      const ma_nv = decoded.ma_nv;
+
+      const existing = await prisma.nhanVien.findUnique({ where: { ma_nv } });
+      if (!existing) {
+        return res.status(404).json({ detail: "Nhân viên không tồn tại" });
+      }
+
+      const data = req.body || {};
+      const updateData = {};
+
+      // Only allow updating non-sensitive fields
+      if (data.dia_chi) updateData.dia_chi = String(data.dia_chi);
+      if (data.email) updateData.email = String(data.email);
+      if (data.sdt) updateData.sdt = String(data.sdt);
+
+      const updated = await prisma.nhanVien.update({
+        where: { ma_nv },
+        data: updateData,
+      });
+
+      res.json(serialize(updated));
+    } catch {
+      return res.status(401).json({ detail: "Invalid or expired token" });
+    }
+  } catch (err) {
+    next(err);
+  }
+});
+
 // GET /employees/:ma_nv
 router.get("/:ma_nv", checkRole("admin"), async (req, res, next) => {
   try {

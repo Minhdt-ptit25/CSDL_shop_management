@@ -106,6 +106,9 @@ const getMemberTier = (points) => {
     if (points >= 150) return 'Đồng';
     if (points >= 50)  return 'Sắt';
     return 'Vô hạng';
+    if (points >= 2000) return 'Vàng';
+    if (points >= 500) return 'Bạc';
+    return 'Đồng';
 };
 
 let categorySalesChart = null;
@@ -282,11 +285,12 @@ function renderTopCustomersList(customers) {
 
 async function fetchDashboardCharts() {
     try {
+        const authHeader = { 'Authorization': `Bearer ${localStorage.getItem('adminToken')}` };
         const [categoryResp, monthlyResp, yearlyResp, topCustomersResp] = await Promise.all([
-            fetch(`${API_BASE_URL}/report/category-sales`),
-            fetch(`${API_BASE_URL}/report/sales-monthly`),
-            fetch(`${API_BASE_URL}/report/sales-yearly`),
-            fetch(`${API_BASE_URL}/report/top-customers`),
+            fetch(`${API_BASE_URL}/report/category-sales`, { headers: authHeader }),
+            fetch(`${API_BASE_URL}/report/sales-monthly`, { headers: authHeader }),
+            fetch(`${API_BASE_URL}/report/sales-yearly`, { headers: authHeader }),
+            fetch(`${API_BASE_URL}/report/top-customers`, { headers: authHeader }),
         ]);
 
         const [categoryData, monthlyData, yearlyData, topCustomersData] = await Promise.all([
@@ -308,13 +312,20 @@ async function fetchDashboardCharts() {
 // Fetch Dashboard Stats
 async function fetchStats() {
     try {
-        const response = await fetch(`${API_BASE_URL}/stats`);
+        const response = await fetch(`${API_BASE_URL}/stats`, {
+            headers: { 'Authorization': `Bearer ${localStorage.getItem('adminToken')}` }
+        });
         const stats = await response.json();
         
-        document.getElementById('stat-orders').innerHTML = `<span>${stats.total_orders}</span>`;
-        document.getElementById('stat-revenue').innerHTML = `<span>${formatCurrency(stats.total_revenue)}</span>`;
-        document.getElementById('stat-customers').innerHTML = `<span>${stats.total_customers}</span>`;
-        document.getElementById('stat-products').innerHTML = `<span>${stats.total_products}</span>`;
+        const elOrders = document.getElementById('stat-orders');
+        const elRevenue = document.getElementById('stat-revenue');
+        const elCustomers = document.getElementById('stat-customers');
+        const elLowStock = document.getElementById('stat-low-stock');
+
+        if (elOrders) elOrders.innerHTML = `<span>${stats.total_orders || 0}</span>`;
+        if (elRevenue) elRevenue.innerHTML = `<span>${formatCurrency(stats.total_revenue || 0)}</span>`;
+        if (elCustomers) elCustomers.innerHTML = `<span>${stats.total_customers || 0}</span>`;
+        if (elLowStock) elLowStock.innerHTML = `<span>${stats.low_stock_count || 0}</span>`;
     } catch (error) {
         console.error('Error fetching stats:', error);
     }
@@ -323,7 +334,9 @@ async function fetchStats() {
 // Fetch Products
 async function fetchProducts() {
     try {
-        const response = await fetch(`${API_BASE_URL}/products`);
+        const response = await fetch(`${API_BASE_URL}/products`, {
+            headers: { 'Authorization': `Bearer ${localStorage.getItem('adminToken')}` }
+        });
         const products = await response.json();
         
         const dashboardBody = document.getElementById('products-table-body');
@@ -351,6 +364,7 @@ async function fetchProducts() {
                         </div>
                     </td>
                     <td class="text-center">${product.danh_muc}</td>
+                    <td class="text-center"><span class="badge-info">${product.chat_lieu}</span></td>
                 `;
                 dashboardBody.appendChild(tr);
             }
@@ -365,6 +379,7 @@ async function fetchProducts() {
                     <td class="text-center">${product.chat_lieu}</td>
                     <td class="text-center">${product.gioi_tinh}</td>
                     <td class="text-center">${product.ma_ncc}</td>
+                    <td class="text-center">${product.so_luong_du || 0}</td>
                     <td class="text-center">
                         <div class="btn-group">
                             <button class="btn btn-sm btn-warning" onclick="openEditProductModal('${product.ma_sp}')"><i class="fas fa-edit"></i></button>
@@ -384,7 +399,9 @@ async function fetchProducts() {
 // Fetch Customers
 async function fetchCustomers() {
     try {
-        const response = await fetch(`${API_BASE_URL}/customers`);
+        const response = await fetch(`${API_BASE_URL}/customers`, {
+            headers: { 'Authorization': `Bearer ${localStorage.getItem('adminToken')}` }
+        });
         const items = await response.json();
         const crudBody = document.getElementById('crud-customers-body');
         if (!crudBody) return;
@@ -396,9 +413,11 @@ async function fetchCustomers() {
             tr.innerHTML = `
                 <td class="text-center"><span class="badge-secondary border-0">${item.ma_kh}</span></td>
                 <td><div class="table-info-heading">${item.ho_ten_kh}</div></td>
+                <td>${item.dia_chi || ''}</td>
                 <td class="text-center">${item.sdt}</td>
+                <td>${item.email || ''}</td>
                 <td class="text-center">${item.diem_tich_luy}</td>
-                <td class="text-center"><span class="badge-info">${item.hang_thanh_vien}</span></td>
+                <td class="text-center"><span class="badge-info">${item.ten_hang}</span></td>
                 <td class="text-center">
                     <div class="btn-group">
                         <button class="btn btn-sm btn-warning" onclick="openEditCustomerModal('${item.ma_kh}')"><i class="fas fa-edit"></i></button>
@@ -415,7 +434,9 @@ async function fetchCustomers() {
 // Fetch Orders
 async function fetchOrders() {
     try {
-        const response = await fetch(`${API_BASE_URL}/orders`);
+        const response = await fetch(`${API_BASE_URL}/orders`, {
+            headers: { 'Authorization': `Bearer ${localStorage.getItem('adminToken')}` }
+        });
         const items = await response.json();
         const crudBody = document.getElementById('crud-orders-body');
         if (!crudBody) return;
@@ -427,6 +448,7 @@ async function fetchOrders() {
             tr.innerHTML = `
                 <td class="text-center"><span class="badge-secondary border-0">${item.ma_hd}</span></td>
                 <td class="text-center">${item.ngay_tao}</td>
+                <td class="text-center" style="font-weight:bold;">${formatCurrency(item.tong_tien_sau_giam)}</td>
                 <td class="text-center" style="font-weight:bold;">${formatCurrency(item.tong_tien_sau_giam)}</td>
                 <td class="text-center">${item.phuong_thuc_thanh_toan}</td>
                 <td class="text-center"><span class="badge-info">${item.trang_thai}</span></td>
@@ -448,7 +470,9 @@ async function fetchOrders() {
 // Fetch Employees
 async function fetchEmployees() {
     try {
-        const response = await fetch(`${API_BASE_URL}/employees`);
+        const response = await fetch(`${API_BASE_URL}/employees`, {
+            headers: { 'Authorization': `Bearer ${localStorage.getItem('adminToken')}` }
+        });
         const items = await response.json();
         const crudBody = document.getElementById('crud-employees-body');
         if (!crudBody) return;
@@ -480,7 +504,9 @@ async function fetchEmployees() {
 // Fetch Suppliers
 async function fetchSuppliers() {
     try {
-        const response = await fetch(`${API_BASE_URL}/suppliers`);
+        const response = await fetch(`${API_BASE_URL}/suppliers`, {
+            headers: { 'Authorization': `Bearer ${localStorage.getItem('adminToken')}` }
+        });
         const items = await response.json();
         const crudBody = document.getElementById('crud-suppliers-body');
         if (!crudBody) return;
@@ -510,6 +536,165 @@ async function fetchSuppliers() {
     }
 }
 
+// Fetch Delete Requests (Admin)
+async function fetchRequests() {
+    try {
+        const token = localStorage.getItem('adminToken');
+        
+        // Fetch cart item delete requests
+        const resCart = await fetch(`${API_BASE_URL}/orders/cart/delete-requests/list?trang_thai=pending`, {
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+        const cartItems = resCart.ok ? await resCart.json() : [];
+        
+        // Fetch order delete requests
+        const resOrder = await fetch(`${API_BASE_URL}/orders/delete-requests/list?trang_thai=pending`, {
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+        const orderItems = resOrder.ok ? await resOrder.json() : [];
+
+        // Normalize data
+        const allRequests = [
+            ...cartItems.map(item => ({
+                id: item.id,
+                type: 'cart',
+                typeStr: 'Xóa SP (Giỏ)',
+                target: item.ma_sku,
+                cashier: item.ten_nv_cashier,
+                reason: item.ly_do,
+                date: new Date(item.ngay_tao)
+            })),
+            ...orderItems.map(item => ({
+                id: item.ma_hd,
+                type: 'order',
+                typeStr: 'Xóa Hóa đơn',
+                target: item.ma_hd,
+                cashier: item.ten_nv_cashier,
+                reason: item.ly_do,
+                date: new Date(item.ngay_tao)
+            }))
+        ];
+
+        // Sort by date descending
+        allRequests.sort((a, b) => b.date - a.date);
+
+        const crudBody = document.getElementById('crud-requests-body');
+        if (!crudBody) return;
+        crudBody.innerHTML = '';
+        
+        if (allRequests.length === 0) {
+            return crudBody.innerHTML = `<tr><td colspan="8" class="text-center">Không có yêu cầu chờ duyệt.</td></tr>`;
+        }
+        
+        allRequests.forEach(item => {
+            const tr = document.createElement('tr');
+            
+            let actionBtns = '';
+            if (item.type === 'cart') {
+                actionBtns = `
+                    <button class="btn btn-sm btn-success" onclick="approveCartRequest('${item.id}')" title="Duyệt"><i class="fas fa-check"></i></button>
+                    <button class="btn btn-sm btn-danger" onclick="rejectCartRequest('${item.id}')" title="Từ chối"><i class="fas fa-times"></i></button>
+                `;
+            } else if (item.type === 'order') {
+                actionBtns = `
+                    <button class="btn btn-sm btn-success" onclick="approveOrderRequest('${item.id}')" title="Duyệt"><i class="fas fa-check"></i></button>
+                    <button class="btn btn-sm btn-danger" onclick="rejectOrderRequest('${item.id}')" title="Từ chối"><i class="fas fa-times"></i></button>
+                `;
+            }
+
+            tr.innerHTML = `
+                <td class="text-center"><span class="badge-secondary border-0">${item.id.slice(-6)}</span></td>
+                <td class="text-center"><span class="badge ${item.type === 'cart' ? 'badge-info' : 'badge-danger'}">${item.typeStr}</span></td>
+                <td class="text-center">${item.cashier}</td>
+                <td class="text-center"><strong>${item.target}</strong></td>
+                <td>${item.reason || ''}</td>
+                <td class="text-center">${item.date.toLocaleString('vi-VN')}</td>
+                <td class="text-center"><span class="text-warning">Chờ duyệt</span></td>
+                <td class="text-center">
+                    <div class="btn-group">
+                        ${actionBtns}
+                    </div>
+                </td>
+            `;
+            crudBody.appendChild(tr);
+        });
+    } catch (e) {
+        console.error('Error fetching requests:', e);
+    }
+}
+
+async function approveCartRequest(id) {
+    try {
+        const res = await fetch(`${API_BASE_URL}/orders/cart/delete-requests/${id}/approve`, {
+            method: 'POST',
+            headers: { 'Authorization': `Bearer ${localStorage.getItem('adminToken')}` }
+        });
+        if (res.ok) {
+            showToast('Đã duyệt yêu cầu xóa!', 'success');
+            fetchRequests();
+        } else {
+            const err = await res.json();
+            showToast(err.detail || 'Lỗi duyệt yêu cầu', 'error');
+        }
+    } catch (e) {
+        showToast('Lỗi kết nối', 'error');
+    }
+}
+
+async function rejectCartRequest(id) {
+    try {
+        const res = await fetch(`${API_BASE_URL}/orders/cart/delete-requests/${id}/reject`, {
+            method: 'POST',
+            headers: { 'Authorization': `Bearer ${localStorage.getItem('adminToken')}` }
+        });
+        if (res.ok) {
+            showToast('Đã từ chối yêu cầu xóa!', 'info');
+            fetchRequests();
+        } else {
+            const err = await res.json();
+            showToast(err.detail || 'Lỗi từ chối yêu cầu', 'error');
+        }
+    } catch (e) {
+        showToast('Lỗi kết nối', 'error');
+    }
+}
+
+async function approveOrderRequest(ma_hd) {
+    try {
+        const res = await fetch(`${API_BASE_URL}/orders/${ma_hd}/confirm-delete`, {
+            method: 'POST',
+            headers: { 'Authorization': `Bearer ${localStorage.getItem('adminToken')}` }
+        });
+        if (res.ok) {
+            showToast('Đã duyệt yêu cầu xóa hóa đơn!', 'success');
+            fetchRequests();
+            fetchOrders();
+        } else {
+            const err = await res.json();
+            showToast(err.detail || 'Lỗi duyệt yêu cầu', 'error');
+        }
+    } catch (e) {
+        showToast('Lỗi kết nối', 'error');
+    }
+}
+
+async function rejectOrderRequest(ma_hd) {
+    try {
+        const res = await fetch(`${API_BASE_URL}/orders/${ma_hd}/reject-delete`, {
+            method: 'POST',
+            headers: { 'Authorization': `Bearer ${localStorage.getItem('adminToken')}` }
+        });
+        if (res.ok) {
+            showToast('Đã từ chối yêu cầu xóa hóa đơn!', 'info');
+            fetchRequests();
+        } else {
+            const err = await res.json();
+            showToast(err.detail || 'Lỗi từ chối yêu cầu', 'error');
+        }
+    } catch (e) {
+        showToast('Lỗi kết nối', 'error');
+    }
+}
 // SPA Routing Logic
 const viewFetchMap = {
     'dashboard': () => { fetchStats(); fetchDashboardCharts(); },
@@ -518,6 +703,7 @@ const viewFetchMap = {
     'orders':    fetchOrders,
     'employees': fetchEmployees,
     'suppliers': fetchSuppliers,
+    'requests':  fetchRequests,
 };
 
 function initRouting() {
@@ -553,9 +739,16 @@ function hideLoginModal() {
     document.getElementById('login-overlay').classList.remove('active');
 }
 
+function parseJwt(token) {
+    try {
+        return JSON.parse(atob(token.split('.')[1]));
+    } catch (e) {
+        return null;
+    }
+}
+
 function checkAuthStatus() {
     const token = localStorage.getItem('adminToken');
-    // Check if we are on the new home.html file
     const isHomePage = window.location.pathname.endsWith('home.html');
 
     if(token) {
@@ -564,7 +757,31 @@ function checkAuthStatus() {
             return;
         }
 
-        // We are on index.html, setup dashboard layout naturally
+        const user = parseJwt(token);
+        if (user) {
+            const nameEl = document.querySelector('.sidebar-user-name');
+            const roleEl = document.querySelector('.sidebar-user-role');
+            if (nameEl) nameEl.innerText = user.ho_ten || 'User';
+            if (roleEl) {
+                const roles = { admin: 'Quản lý', cashier: 'Thu ngân', warehouse: 'Nhân viên kho' };
+                roleEl.innerText = roles[user.vai_tro] || user.vai_tro;
+            }
+
+            // RBAC: Hide menu items
+            const navLinks = document.querySelectorAll('.nav-link[data-view]');
+            navLinks.forEach(link => {
+                const view = link.getAttribute('data-view');
+                let visible = true;
+                if (user.vai_tro === 'cashier' && !['dashboard', 'customers', 'orders'].includes(view)) visible = false;
+                if (user.vai_tro === 'warehouse' && !['dashboard', 'products', 'suppliers'].includes(view)) visible = false;
+                link.parentElement.style.display = visible ? 'block' : 'none';
+            });
+            
+            // Hiện menu Yêu cầu duyệt nếu là admin
+            const menuReq = document.getElementById('menu-requests-admin');
+            if (menuReq) menuReq.style.display = user.vai_tro === 'admin' ? 'block' : 'none';
+        }
+
         document.body.classList.remove('logged-out-layout');
         const overlay = document.getElementById('login-overlay');
         if(overlay) overlay.classList.remove('active');
@@ -574,45 +791,26 @@ function checkAuthStatus() {
         const unauthSidebar = document.getElementById('sidebar-unauth');
         if (unauthSidebar) unauthSidebar.style.display = 'none';
 
-        const headerAuth   = document.getElementById('header-auth');
-        const headerUnauth = document.getElementById('header-unauth');
-        if (headerAuth)   headerAuth.style.display   = 'flex';
-        if (headerUnauth) headerUnauth.style.display = 'none';
-
-        // Assure a view is active
         if (!document.querySelector('.app-view.active')) {
             const dash = document.getElementById('view-dashboard');
             if(dash) dash.classList.add('active');
         }
     } else {
         if(!isHomePage) {
-            // Not logged in but viewing index.html -> redirect to home.html
             window.location.href = 'home.html';
             return;
         }
-
-        // We are on home.html, configure the basic landing UI
         document.body.classList.add('logged-out-layout');
         const overlay = document.getElementById('login-overlay');
-        if(overlay) overlay.classList.remove('active'); // Hide popup, wait for button
+        if(overlay) overlay.classList.remove('active');
         
         const authSidebar = document.getElementById('sidebar-auth');
         if (authSidebar) authSidebar.style.display = 'none';
         const unauthSidebar = document.getElementById('sidebar-unauth');
         if (unauthSidebar) unauthSidebar.style.display = 'flex';
 
-        const headerAuth   = document.getElementById('header-auth');
-        const headerUnauth = document.getElementById('header-unauth');
-        if (headerAuth)   headerAuth.style.display   = 'none';
-        if (headerUnauth) headerUnauth.style.display = 'flex';
-
         const sidebar = document.querySelector('.app-sidebar');
-        const mainOuter = document.querySelector('.app-main__outer');
-        const header = document.querySelector('.app-header');
-
         if(sidebar) sidebar.style.display = 'none';
-        if(mainOuter) mainOuter.style.paddingLeft = '0';
-        if(header) { header.style.marginLeft = '0'; header.style.width = '100%'; }
 
         document.querySelectorAll('.app-view').forEach(v => v.classList.remove('active'));
         if(document.getElementById('view-home')) document.getElementById('view-home').classList.add('active');
@@ -637,8 +835,11 @@ async function attemptLogin() {
             localStorage.setItem('adminToken', data.access_token);
             checkAuthStatus();
             showToast('Đăng nhập thành công!', 'success');
+            // Refresh data
+            location.reload();
         } else {
-            errDiv.innerText = 'Sai tài khoản hoặc mật khẩu!';
+            const data = await resp.json();
+            errDiv.innerText = data.detail || 'Sai tài khoản hoặc mật khẩu!';
             errDiv.style.display = 'block';
         }
     } catch(e) {
@@ -730,13 +931,29 @@ function showToast(message, type = 'success') {
 document.addEventListener('DOMContentLoaded', () => {
     checkAuthStatus();
     initRouting();
+    
+    const token = localStorage.getItem('adminToken');
+    const user = parseJwt(token);
+
     fetchStats();
-    fetchProducts();
-    fetchCustomers();
-    fetchOrders();
-    fetchEmployees();
-    fetchSuppliers();
     fetchDashboardCharts();
+
+    if (user) {
+        if (user.vai_tro === 'admin') {
+            fetchProducts();
+            fetchCustomers();
+            fetchOrders();
+            fetchEmployees();
+            fetchSuppliers();
+            fetchRequests();
+        } else if (user.vai_tro === 'cashier') {
+            fetchCustomers();
+            fetchOrders();
+        } else if (user.vai_tro === 'warehouse') {
+            fetchProducts();
+            fetchSuppliers();
+        }
+    }
     
     // Auto-refresh dashboard every 5 seconds (stats + charts)
     setInterval(() => {
@@ -758,6 +975,8 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 // ===================== MODAL LOGIC =====================
+let pendingRemoveRow = null;
+
 function openModal(id) {
     document.getElementById('modal-overlay').style.display = 'block';
     document.getElementById(id).style.display = 'flex';
@@ -766,34 +985,62 @@ function openModal(id) {
 function closeAllModals() {
     document.getElementById('modal-overlay').style.display = 'none';
     document.querySelectorAll('.modal-box').forEach(m => m.style.display = 'none');
+    
+    pendingRemoveRow = null;
+    const authUser = document.getElementById('admin-auth-username');
+    if(authUser) authUser.value = '';
+    const authPass = document.getElementById('admin-auth-password');
+    if(authPass) authPass.value = '';
+    const authErr = document.getElementById('admin-auth-error');
+    if(authErr) authErr.style.display = 'none';
 }
 
 // ---- PRODUCT CRUD ----
+function addSkuRow(sku = {}) {
+    const tbody = document.getElementById('sku-rows-body');
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+        <td><input type="text" class="form-control form-control-sm sku-ma" placeholder="VD: SP07-D-M" value="${sku.ma_sku || ''}" required></td>
+        <td><input type="text" class="form-control form-control-sm sku-mau" placeholder="Đỏ" value="${sku.mau_sac || ''}"></td>
+        <td><input type="text" class="form-control form-control-sm sku-kich" placeholder="M" value="${sku.kich_co || ''}"></td>
+        <td><input type="number" class="form-control form-control-sm sku-gia" placeholder="150000" value="${sku.gia_ban || ''}"></td>
+        <td><input type="number" class="form-control form-control-sm sku-sl" placeholder="0" value="${sku.so_luong_ton ?? 0}"></td>
+        <td><button type="button" class="btn btn-sm btn-danger" onclick="this.closest('tr').remove()"><i class="fas fa-times"></i></button></td>
+    `;
+    tbody.appendChild(tr);
+}
+
 async function openAddProductModal() {
     document.getElementById('p-is-edit').value = 'false';
     document.getElementById('modal-product-title').innerText = 'Thêm Sản phẩm';
     document.getElementById('form-product').reset();
     document.getElementById('p-ma_sp').readOnly = false;
+    document.getElementById('sku-rows-body').innerHTML = '';
     openModal('modal-product');
 }
 
 async function openEditProductModal(ma_sp) {
     try {
-        const res = await fetch(`${API_BASE_URL}/products`);
-        if (!res.ok) return showToast('Lỗi tải dữ liệu SP', 'error');
-        const products = await res.json();
-        const p = products.find(x => x.ma_sp === ma_sp);
-        if (!p) return showToast('Không tìm thấy SP', 'error');
+        const res = await fetch(`${API_BASE_URL}/products/${ma_sp}`, {
+            headers: { 'Authorization': `Bearer ${localStorage.getItem('adminToken')}` }
+        });
+        const p = await res.json();
+        if(!res.ok) return showToast(p.detail || 'Không tìm thấy SP', 'error');
 
         document.getElementById('p-is-edit').value = 'true';
         document.getElementById('modal-product-title').innerText = 'Sửa Sản phẩm: ' + ma_sp;
         document.getElementById('p-ma_sp').value = p.ma_sp;
         document.getElementById('p-ma_sp').readOnly = true;
         document.getElementById('p-ten_sp').value = p.ten_sp || '';
-        document.getElementById('p-danhmuc').value = p.danh_muc || '';
-        document.getElementById('p-chatlieu').value = p.chat_lieu || '';
-        document.getElementById('p-gioitinh').value = p.gioi_tinh || '';
+        document.getElementById('p-danhmuc').value = p.danh_muc;
+        document.getElementById('p-chatlieu').value = p.chat_lieu;
+        document.getElementById('p-gioitinh').value = p.gioi_tinh;
         document.getElementById('p-ma_ncc').value = p.ma_ncc || '';
+
+        // Load existing SKU rows
+        document.getElementById('sku-rows-body').innerHTML = '';
+        (p.bienthes || []).forEach(sku => addSkuRow(sku));
+
         openModal('modal-product');
     } catch(e) {
         showToast('Lỗi tải dữ liệu SP', 'error');
@@ -805,6 +1052,19 @@ async function submitProductForm() {
     const ma_sp = document.getElementById('p-ma_sp').value.trim();
     if(!ma_sp) return showToast('Vui lòng nhập Mã SP', 'error');
 
+    // Collect SKU rows
+    const skuRows = document.querySelectorAll('#sku-rows-body tr');
+    const bienthes = [];
+    for (const row of skuRows) {
+        const ma_sku = row.querySelector('.sku-ma').value.trim();
+        const mau_sac = row.querySelector('.sku-mau').value.trim();
+        const kich_co = row.querySelector('.sku-kich').value.trim();
+        const gia_ban = parseFloat(row.querySelector('.sku-gia').value);
+        const so_luong_ton = parseInt(row.querySelector('.sku-sl').value) || 0;
+        if (!ma_sku) { showToast('Mã SKU không được để trống', 'error'); return; }
+        bienthes.push({ ma_sku, mau_sac, kich_co, gia_ban, so_luong_ton });
+    }
+
     const payload = {
         ma_sp:     ma_sp,
         ten_sp:    document.getElementById('p-ten_sp').value.trim(),
@@ -812,6 +1072,7 @@ async function submitProductForm() {
         chat_lieu: document.getElementById('p-chatlieu').value.trim() || 'Cotton',
         gioi_tinh: document.getElementById('p-gioitinh').value.trim() || 'Unisex',
         ma_ncc:    document.getElementById('p-ma_ncc').value.trim(),
+        bienthes,
     };
 
     const method = isEdit ? 'PUT' : 'POST';
@@ -845,13 +1106,108 @@ function openDeleteModal(id, type = 'product') {
     document.getElementById('delete-target-id').innerText = id;
     document.getElementById('delete-item-id').value = id;
     document.getElementById('delete-item-type').value = type;
+    
+    const modalDelete = document.getElementById('modal-delete');
+    if (type === 'order') {
+        modalDelete.classList.add('shake-animation');
+        setTimeout(() => modalDelete.classList.remove('shake-animation'), 400);
+    }
     openModal('modal-delete');
 }
 
 async function confirmDelete() {
     const id = document.getElementById('delete-item-id').value;
     const type = document.getElementById('delete-item-type').value;
+    const token = localStorage.getItem('adminToken');
+    const user = parseJwt(token);
 
+    if (user && user.vai_tro !== 'admin') {
+        if (user.vai_tro === 'warehouse' && type === 'product') {
+            await executeDeleteRequest(id, type, token);
+            return;
+        }
+        if (user.vai_tro === 'cashier' && type === 'order') {
+            await executeDeleteRequest(id, type, token);
+            return;
+        }
+        // Not admin, show approval modal
+        openModal('modal-admin-auth');
+        return;
+    }
+
+    executeDelete(id, type, token);
+}
+
+async function executeDeleteRequest(id, type, token) {
+    let url = '';
+    if (type === 'product') url = `${API_BASE_URL}/products/${id}/delete-request`;
+    else if (type === 'order') url = `${API_BASE_URL}/orders/${id}/delete-request`;
+
+    try {
+        const res = await fetch(url, {
+            method: 'POST',
+            headers: { 
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ ly_do: "Yêu cầu từ nhân viên" })
+        });
+        if(res.ok) {
+            showToast('Đã gửi yêu cầu xóa tới Admin!', 'success');
+            closeAllModals();
+        } else {
+            const err = await res.json();
+            showToast(err.detail || 'Gửi yêu cầu xóa thất bại', 'error');
+        }
+    } catch(e) {
+        showToast('Lỗi kết nối Server', 'error');
+    }
+}
+
+async function approveDeletion() {
+    const user = document.getElementById('admin-auth-username').value;
+    const pass = document.getElementById('admin-auth-password').value;
+    const errDiv = document.getElementById('admin-auth-error');
+    errDiv.style.display = 'none';
+
+    try {
+        const resp = await fetch(`${API_BASE_URL}/login`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ username: user, password: pass })
+        });
+        
+        if (resp.ok) {
+            const data = await resp.json();
+            if (data.user.vai_tro !== 'admin') {
+                errDiv.innerText = 'Tài khoản phê duyệt phải là Admin!';
+                errDiv.style.display = 'block';
+                return;
+            }
+
+            if (pendingRemoveRow) {
+                pendingRemoveRow.remove();
+                closeAllModals();
+                return;
+            }
+
+            const id = document.getElementById('delete-item-id').value;
+            const type = document.getElementById('delete-item-type').value;
+            
+            // Use the admin's token for this deletion
+            await executeDelete(id, type, data.access_token);
+            closeAllModals();
+        } else {
+            errDiv.innerText = 'Sai tài khoản hoặc mật khẩu Admin!';
+            errDiv.style.display = 'block';
+        }
+    } catch(e) {
+        errDiv.innerText = 'Lỗi kết nối server.';
+        errDiv.style.display = 'block';
+    }
+}
+
+async function executeDelete(id, type, token) {
     let url = '';
     if (type === 'product') url = `${API_BASE_URL}/products/${id}`;
     else if (type === 'customer') url = `${API_BASE_URL}/customers/${id}`;
@@ -862,19 +1218,20 @@ async function confirmDelete() {
     try {
         const res = await fetch(url, {
             method: 'DELETE',
-            headers: { 'Authorization': `Bearer ${localStorage.getItem('adminToken')}` }
+            headers: { 'Authorization': `Bearer ${token}` }
         });
         if(res.ok) {
             showToast('Đã xóa thành công!', 'success');
             closeAllModals();
-            fetchStats(); // Refresh stats after delete
+            fetchStats();
             if (type === 'product') fetchProducts();
             else if (type === 'customer') fetchCustomers();
             else if (type === 'order') fetchOrders();
             else if (type === 'employee') fetchEmployees();
             else if (type === 'supplier') fetchSuppliers();
         } else {
-            showToast('Xóa thất bại', 'error');
+            const err = await res.json();
+            showToast(err.detail || 'Xóa thất bại', 'error');
         }
     } catch(e) {
         showToast('Lỗi kết nối Server', 'error');
@@ -955,11 +1312,11 @@ async function openAddCustomerModal() {
 
 async function openEditCustomerModal(ma_kh) {
     try {
-        const res = await fetch(`${API_BASE_URL}/customers`);
-        if (!res.ok) return showToast('Lỗi tải dữ liệu KH', 'error');
-        const items = await res.json();
-        const c = items.find(x => x.ma_kh === ma_kh);
-        if (!c) return showToast('Không tìm thấy KH', 'error');
+        const res = await fetch(`${API_BASE_URL}/customers/${ma_kh}`, {
+            headers: { 'Authorization': `Bearer ${localStorage.getItem('adminToken')}` }
+        });
+        const c = await res.json();
+        if(!res.ok) return showToast(c.detail || 'Không tìm thấy KH', 'error');
 
         document.getElementById('c-is-edit').value = 'true';
         document.getElementById('modal-customer-title').innerText = 'Sửa Khách hàng: ' + ma_kh;
@@ -987,7 +1344,7 @@ async function submitCustomerForm() {
         ho_ten_kh: document.getElementById('c-hoten').value.trim(),
         sdt: document.getElementById('c-sdt').value.trim(),
         diem_tich_luy: points,
-        hang_thanh_vien: getMemberTier(points)
+        ten_hang: getMemberTier(points)
     };
 
     const method = isEdit ? 'PUT' : 'POST';
@@ -1014,21 +1371,123 @@ async function submitCustomerForm() {
 }
 
 // ---- ORDER CRUD ----
+function addOrderItem(sku = '', qty = 1) {
+    const list = document.getElementById('order-items-list');
+    const div = document.createElement('div');
+    div.className = 'order-item-row';
+    div.style.cssText = 'display: flex; gap: 10px; margin-bottom: 10px; align-items: center;';
+    div.innerHTML = `
+        <input type="text" class="form-control item-sku" placeholder="SKU" value="${sku}" required>
+        <input type="number" class="form-control item-qty" placeholder="SL" value="${qty}" min="1" style="width: 80px;" required>
+        <button type="button" class="btn btn-outline-danger" style="padding: 0.4rem 0.75rem;" onclick="promptRemoveOrderItem(this)"><i class="fas fa-times"></i></button>
+    `;
+    list.appendChild(div);
+}
+
+function promptRemoveOrderItem(btn) {
+    const token = localStorage.getItem('adminToken');
+    const user = parseJwt(token);
+
+    if (user && user.vai_tro !== 'admin') {
+        const sku = btn.parentElement.querySelector('.item-sku').value || '(Trống)';
+        pendingRemoveRow = btn.parentElement;
+        
+        document.getElementById('cart-delete-sku').innerText = sku;
+        document.getElementById('cart-delete-reason').value = '';
+        openModal('modal-request-cart-delete');
+    } else {
+        btn.parentElement.remove();
+    }
+}
+
+// ---- CART ITEM DELETE REQUEST (Cashier side) ----
+async function submitCartItemDeleteRequest() {
+    const sku = document.getElementById('cart-delete-sku').innerText;
+    const reason = document.getElementById('cart-delete-reason').value.trim();
+    if (!reason) return showToast('Vui lòng nhập lý do xóa', 'error');
+
+    try {
+        const res = await fetch(`${API_BASE_URL}/orders/cart/delete-request`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${localStorage.getItem('adminToken')}`
+            },
+            body: JSON.stringify({ ma_sku: sku, ly_do: reason })
+        });
+        
+        if (res.ok) {
+            const data = await res.json();
+            // Đóng modal request, mở modal waiting
+            document.getElementById('modal-request-cart-delete').style.display = 'none';
+            document.getElementById('waiting-request-id').value = data.id;
+            
+            // Hiện overlay cố định không cho click đóng
+            const overlay = document.getElementById('modal-overlay');
+            overlay.style.display = 'block';
+            overlay.onclick = null; // Chặn đóng modal khi click ra ngoài
+            
+            document.getElementById('modal-waiting-approval').style.display = 'block';
+            
+            // Bắt đầu poll
+            pollCartItemDeleteRequest(data.id);
+        } else {
+            const err = await res.json();
+            showToast(err.detail || 'Gửi yêu cầu thất bại', 'error');
+        }
+    } catch(e) {
+        showToast('Lỗi kết nối Server', 'error');
+    }
+}
+
+async function pollCartItemDeleteRequest(id) {
+    try {
+        const res = await fetch(`${API_BASE_URL}/orders/cart/delete-requests/status/${id}`, {
+            headers: { 'Authorization': `Bearer ${localStorage.getItem('adminToken')}` }
+        });
+        
+        if (res.ok) {
+            const data = await res.json();
+            if (data.trang_thai === 'approved') {
+                if (pendingRemoveRow) pendingRemoveRow.remove();
+                closeAllModals();
+                // Khôi phục overlay click close
+                document.getElementById('modal-overlay').onclick = closeAllModals;
+                showToast('Admin đã duyệt xóa sản phẩm', 'success');
+                return;
+            } else if (data.trang_thai === 'rejected') {
+                closeAllModals();
+                document.getElementById('modal-overlay').onclick = closeAllModals;
+                showToast('Admin đã TỪ CHỐI yêu cầu xóa', 'error');
+                return;
+            }
+        }
+    } catch (e) {
+        console.error("Poll error:", e);
+    }
+    
+    // Check if modal is still open before continuing to poll
+    if (document.getElementById('modal-waiting-approval').style.display === 'block') {
+        setTimeout(() => pollCartItemDeleteRequest(id), 3000); // 3 seconds
+    }
+}
+
 async function openAddOrderModal() {
     document.getElementById('o-is-edit').value = 'false';
     document.getElementById('modal-order-title').innerText = 'Thêm Đơn hàng';
     document.getElementById('form-order').reset();
-    document.getElementById('o-ma_hd').readOnly = false;
+    document.getElementById('order-items-list').innerHTML = '';
+    addOrderItem(); // Start with one empty row
     openModal('modal-order');
 }
 
 async function openEditOrderModal(ma_hd) {
     try {
-        const res = await fetch(`${API_BASE_URL}/orders`);
-        if (!res.ok) return showToast('Lỗi tải dữ liệu HĐ', 'error');
-        const items = await res.json();
-        const o = items.find(x => x.ma_hd === ma_hd);
-        if (!o) return showToast('Không tìm thấy HĐ', 'error');
+        const res = await fetch(`${API_BASE_URL}/orders/${ma_hd}`, {
+            headers: { 'Authorization': `Bearer ${localStorage.getItem('adminToken')}` }
+        });
+        const o = await res.json();
+        if(!res.ok) return showToast(o.detail || 'Không tìm thấy HĐ', 'error');
 
         document.getElementById('o-is-edit').value = 'true';
         document.getElementById('modal-order-title').innerText = 'Sửa Đơn hàng: ' + ma_hd;
@@ -1049,31 +1508,43 @@ async function openEditOrderModal(ma_hd) {
 
 async function submitOrderForm() {
     const isEdit = document.getElementById('o-is-edit').value === 'true';
+    if (isEdit) return showToast('Sửa hóa đơn trực tiếp không được khuyến khích. Vui lòng xóa và tạo mới để đảm bảo tồn kho.', 'info');
+
     const ma_hd = document.getElementById('o-ma_hd').value.trim();
-    if(!ma_hd) return showToast('Vui lòng nhập Mã HĐ', 'error');
+    const ma_kh = document.getElementById('o-ma_kh').value.trim();
+    const ma_voucher = document.getElementById('o-ma_voucher').value.trim();
+    const ptth = document.getElementById('o-tt').value;
+
+    const itemRows = document.querySelectorAll('.order-item-row');
+    const items = [];
+    itemRows.forEach(row => {
+        const sku = row.querySelector('.item-sku').value.trim();
+        const qty = parseInt(row.querySelector('.item-qty').value);
+        if (sku && qty > 0) items.push({ ma_sku: sku, so_luong: qty });
+    });
+
+    if (items.length === 0) return showToast('Vui lòng thêm ít nhất 1 sản phẩm', 'error');
 
     const payload = {
-        ma_hd: ma_hd,
-        ma_kh: document.getElementById('o-ma_kh').value.trim(),
-        ma_nv: document.getElementById('o-ma_nv').value.trim(),
-        ngay_tao: document.getElementById('o-ngay').value,
-        tong_tien_sau_giam: parseFloat(document.getElementById('o-tong').value) || 0,
-        tong_tien_truoc_giam: parseFloat(document.getElementById('o-tong').value) || 0,
-        phuong_thuc_thanh_toan: document.getElementById('o-tt').value,
-        trang_thai: document.getElementById('o-trangthai').value
+        ma_hd: ma_hd || undefined,
+        ma_kh,
+        ma_voucher: ma_voucher || undefined,
+        phuong_thuc_thanh_toan: ptth,
+        items
     };
 
-    const method = isEdit ? 'PUT' : 'POST';
-    const url = isEdit ? `${API_BASE_URL}/orders/${ma_hd}` : `${API_BASE_URL}/orders`;
-
     try {
-        const res = await fetch(url, {
-            method: method,
-            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${localStorage.getItem('adminToken')}` },
+        const res = await fetch(`${API_BASE_URL}/orders`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${localStorage.getItem('adminToken')}`
+            },
             body: JSON.stringify(payload)
         });
-        if(res.ok) {
-            showToast(isEdit ? 'Đã cập nhật HĐ!' : 'Đã thêm HĐ mới!', 'success');
+
+        if (res.ok) {
+            showToast('Đã tạo hóa đơn thành công!', 'success');
             closeAllModals();
             fetchStats();
             fetchOrders();
@@ -1097,11 +1568,11 @@ async function openAddEmployeeModal() {
 
 async function openEditEmployeeModal(ma_nv) {
     try {
-        const res = await fetch(`${API_BASE_URL}/employees`);
-        if (!res.ok) return showToast('Lỗi tải dữ liệu NV', 'error');
-        const items = await res.json();
-        const e = items.find(x => x.ma_nv === ma_nv);
-        if (!e) return showToast('Không tìm thấy NV', 'error');
+        const res = await fetch(`${API_BASE_URL}/employees/${ma_nv}`, {
+            headers: { 'Authorization': `Bearer ${localStorage.getItem('adminToken')}` }
+        });
+        const e = await res.json();
+        if(!res.ok) return showToast(e.detail || 'Không tìm thấy NV', 'error');
 
         document.getElementById('e-is-edit').value = 'true';
         document.getElementById('modal-employee-title').innerText = 'Sửa Nhân viên: ' + ma_nv;
@@ -1175,11 +1646,11 @@ async function openAddSupplierModal() {
 
 async function openEditSupplierModal(ma_ncc) {
     try {
-        const res = await fetch(`${API_BASE_URL}/suppliers`);
-        if (!res.ok) return showToast('Lỗi tải dữ liệu NCC', 'error');
-        const items = await res.json();
-        const s = items.find(x => x.ma_ncc === ma_ncc);
-        if (!s) return showToast('Không tìm thấy NCC', 'error');
+        const res = await fetch(`${API_BASE_URL}/suppliers/${ma_ncc}`, {
+            headers: { 'Authorization': `Bearer ${localStorage.getItem('adminToken')}` }
+        });
+        const s = await res.json();
+        if(!res.ok) return showToast(s.detail || 'Không tìm thấy NCC', 'error');
 
         document.getElementById('s-is-edit').value = 'true';
         document.getElementById('modal-supplier-title').innerText = 'Sửa Nhà cung cấp: ' + ma_ncc;
@@ -1245,10 +1716,12 @@ async function applyFilterCustomer() {
     const minDiem = parseInt(document.getElementById('f-c-diem-min').value);
     
     try {
-        const res = await fetch(`${API_BASE_URL}/customers`);
+        const res = await fetch(`${API_BASE_URL}/customers`, {
+            headers: { 'Authorization': `Bearer ${localStorage.getItem('adminToken')}` }
+        });
         let items = await res.json();
         
-        if (hang) items = items.filter(x => x.hang_thanh_vien === hang);
+        if (hang) items = items.filter(x => x.ten_hang === hang);
         if (!isNaN(minDiem)) items = items.filter(x => (x.diem_tich_luy||0) >= minDiem);
         
         const crudBody = document.getElementById('crud-customers-body');
@@ -1264,7 +1737,7 @@ async function applyFilterCustomer() {
                     <td>${item.ho_ten_kh}</td>
                     <td class="text-center">${item.sdt || ''}</td>
                     <td class="text-center">${item.diem_tich_luy}</td>
-                    <td class="text-center">${item.hang_thanh_vien}</td>
+                    <td class="text-center">${item.ten_hang}</td>
                     <td class="text-center">
                         <div class="btn-group">
                             <button class="btn btn-sm btn-warning" onclick="openEditCustomerModal('${item.ma_kh}')"><i class="fas fa-edit"></i></button>
@@ -1299,7 +1772,9 @@ async function applyFilterOrder() {
     const method = document.getElementById('f-o-tt').value;
     
     try {
-        const res = await fetch(`${API_BASE_URL}/orders`);
+        const res = await fetch(`${API_BASE_URL}/orders`, {
+            headers: { 'Authorization': `Bearer ${localStorage.getItem('adminToken')}` }
+        });
         let items = await res.json();
         
         if (ngay) items = items.filter(x => x.ngay_tao === ngay);
@@ -1355,7 +1830,9 @@ async function applyFilterEmployee() {
     const vitri = document.getElementById('f-e-vitri').value.trim().toLowerCase();
     
     try {
-        const res = await fetch(`${API_BASE_URL}/employees`);
+        const res = await fetch(`${API_BASE_URL}/employees`, {
+            headers: { 'Authorization': `Bearer ${localStorage.getItem('adminToken')}` }
+        });
         let items = await res.json();
         
         if (gt) items = items.filter(x => x.gioi_tinh === gt);
@@ -1409,7 +1886,9 @@ async function applyFilterSupplier() {
     const diachi = document.getElementById('f-s-diachi').value.trim().toLowerCase();
     
     try {
-        const res = await fetch(`${API_BASE_URL}/suppliers`);
+        const res = await fetch(`${API_BASE_URL}/suppliers`, {
+            headers: { 'Authorization': `Bearer ${localStorage.getItem('adminToken')}` }
+        });
         let items = await res.json();
         
         if (ten) items = items.filter(x => (x.ten_ncc||'').toLowerCase().includes(ten));

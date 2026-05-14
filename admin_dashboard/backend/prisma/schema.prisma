@@ -31,7 +31,7 @@ model CuaHang {
 
 // ── Hạng thành viên (thay thế uudai_hang) ────────────────────────────────────
 model HangThanhVien {
-  ten_hang        String      @id   // 'Vô hạng' | 'Sắt' | 'Đồng' | 'Vàng'
+  ten_hang        String      @id   // 'Đồng' | 'Bạc' | 'Vàng'
   diem_toithieu   Int         @default(0)
   phan_tram_uudai Int         @default(0)
   khachhang       KhachHang[]
@@ -47,7 +47,7 @@ model KhachHang {
   sdt           String   @unique
   email         String?
   diem_tich_luy Int      @default(0)
-  ten_hang      String   @default("Vô hạng")
+  ten_hang      String   @default("Đồng")
 
   hangthanhvien HangThanhVien @relation(fields: [ten_hang], references: [ten_hang])
   hoadons       HoaDon[]
@@ -104,7 +104,9 @@ model NhanVien {
   cuahang    CuaHang     @relation(fields: [ma_ch], references: [ma_ch])
   phieunhaps PhieuNhap[]
   hoadons    HoaDon[]
-
+  deleteRequests DeleteRequest[]
+  productDeleteRequests ProductDeleteRequest[]
+  cartItemDeleteRequests CartItemDeleteRequest[]
   @@map("nhanvien")
 }
 
@@ -119,6 +121,7 @@ model SanPham {
 
   nhacungcap NhaCungCap  @relation(fields: [ma_ncc], references: [ma_ncc])
   bienthes   BienTheSKU[]
+  productDeleteRequests ProductDeleteRequest[]
 
   @@map("sanpham")
 }
@@ -172,6 +175,7 @@ model HoaDon {
   nhanvien  NhanVien      @relation(fields: [ma_nv], references: [ma_nv])
   voucher   Voucher?      @relation(fields: [ma_voucher], references: [ma_voucher])
   chitiet   ChiTietHoaDon[]
+  deleteRequests DeleteRequest[]
 
   @@map("hoadon")
 }
@@ -203,4 +207,53 @@ model ChiTietPhieuNhap {
 
   @@id([ma_pn, ma_sku])
   @@map("chitietphieunhap")
+}
+
+// ── Yêu cầu xóa hóa đơn ───────────────────────────────────────────────────────
+model DeleteRequest {
+  id          String   @id @default(cuid())
+  ma_hd       String
+  ma_nv_cashier String  // Nhân viên tạo request (cashier)
+  ly_do       String?
+  ngay_tao    DateTime @default(now())
+  trang_thai  String   @default("pending") // 'pending' | 'approved' | 'rejected'
+  ngay_xu_ly  DateTime?
+  ghi_chu     String?  // Ghi chú từ admin
+
+  hoadon HoaDon @relation(fields: [ma_hd], references: [ma_hd], onDelete: Cascade)
+  nhanvien NhanVien @relation(fields: [ma_nv_cashier], references: [ma_nv])
+
+  @@map("delete_request")
+}
+
+// ── Yêu cầu xóa sản phẩm ──────────────────────────────────────────────────────
+model ProductDeleteRequest {
+  id              String   @id @default(cuid())
+  ma_sp           String
+  ma_nv_warehouse String
+  ly_do           String?
+  ngay_tao        DateTime @default(now())
+  trang_thai      String   @default("pending") // 'pending' | 'approved' | 'rejected'
+  ngay_xu_ly      DateTime?
+  ghi_chu         String?
+
+  sanpham  SanPham  @relation(fields: [ma_sp], references: [ma_sp], onDelete: Cascade)
+  nhanvien NhanVien @relation(fields: [ma_nv_warehouse], references: [ma_nv])
+
+  @@map("product_delete_request")
+}
+
+// ── Yêu cầu xóa sản phẩm trong giỏ hàng (Cashier) ───────────────────────────
+model CartItemDeleteRequest {
+  id              String   @id @default(cuid())
+  ma_nv_cashier   String
+  ma_sku          String
+  ly_do           String?
+  ngay_tao        DateTime @default(now())
+  trang_thai      String   @default("pending") // 'pending' | 'approved' | 'rejected'
+  ngay_xu_ly      DateTime?
+
+  nhanvien        NhanVien @relation(fields: [ma_nv_cashier], references: [ma_nv])
+
+  @@map("cart_item_delete_request")
 }

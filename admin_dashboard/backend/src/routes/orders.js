@@ -4,7 +4,7 @@ const { prisma } = require("../db/prisma");
 const { checkRole } = require("../middleware/auth");
 const { toDateOnlyString, toNumber } = require("../utils/serialize");
 const { isUniqueConstraintError, sendDuplicateError } = require("../utils/prismaHelpers");
-const { determineTier } = require("../utils/customerTier");
+const { calcPoints, determineTier } = require("../utils/customerTier");
 
 const router = Router();
 
@@ -166,8 +166,8 @@ router.post("/", checkRole("admin", "cashier"), async (req, res, next) => {
         include: { chitiet: true },
       });
 
-      // Update points and recalculate tier
-      const newPoints = kh.diem_tich_luy + Math.floor(tong_tien_sau_giam / 10000);
+      // Quy đổi: 1.000.000 VNĐ = 100 điểm (dùng hàm calcPoints)
+      const newPoints = kh.diem_tich_luy + calcPoints(tong_tien_sau_giam);
       const newTier = await determineTier(newPoints, tx);
 
       await tx.khachHang.update({
@@ -191,7 +191,182 @@ router.post("/", checkRole("admin", "cashier"), async (req, res, next) => {
   }
 });
 
-// DELETE /orders/:ma_hd - Restricted to Admin
+// POST /orders/:ma_hd/delete-request - Cashier request to delete order
+router.post("/:ma_hd/delete-request", checkRole("admin", "cashier"), async (req, res, next) => {
+  try {
+    const { ma_hd } = req.params;
+    const data = req.body || {};
+    const ma_nv_cashier = req.user.ma_nv;
+
+    const existing = await prisma.hoaDon.findUnique({ where: { ma_hd } });
+    if (!existing) return res.status(404).json({ detail: "Hóa đơn không tồn tại" });
+
+    // Check if request already exists and is pending
+    const existingRequest = await prisma.deleteRequest.findFirst({
+      where: { ma_hd, trang_thai: "pending" },
+    });
+    if (existingRequest) {
+      return res.status(400).json({ detail: "Đã có yêu cầu xóa hóa đơn này đang chờ xử lý" });
+    }
+
+    const request = await prisma.deleteRequest.create({
+      data: {
+        ma_hd,
+        ma_nv_cashier,
+        ly_do: data.ly_do || null,
+      },
+    });
+
+    res.status(201).json({
+      id: request.id,
+      ma_hd: request.ma_hd,
+      ma_nv_cashier: request.ma_nv_cashier,
+      ly_do: request.ly_do,
+      ngay_tao: request.ngay_tao,
+      trang_thai: request.trang_thai,
+    });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// GET /orders/delete-requests - Admin view all delete requests
+router.get("/delete-requests/list", checkRole("admin"), async (req, res, next) => {
+  try {
+    const skip = Number(req.query.skip || 0);
+    const take = Number(req.query.limit || 100);
+    const trang_thai = req.query.trang_thai || "pending"; // Default to pending
+
+    const requests = await prisma.deleteRequest.findMany({
+      where: trang_thai ? { trang_thai } : {},
+      skip,
+      take,
+      orderBy: { ngay_tao: "desc" },
+      include: { 
+        hoadon: { include: { nhanvien: true, khachhang: true } },
+        nhanvien: { select: { ma_nv: true, ho_ten_nv: true } }
+      },
+    });
+
+    res.json(requests.map(r => ({
+      id: r.id,
+      ma_hd: r.ma_hd,
+      ma_nv_cashier: r.ma_nv_cashier,
+      ten_nv_cashier: r.nhanvien.ho_ten_nv,
+      ly_do: r.ly_do,
+      ngay_tao: r.ngay_tao,
+      trang_thai: r.trang_thai,
+      ngay_xu_ly: r.ngay_xu_ly,
+      ghi_chu: r.ghi_chu,
+      hoadon: r.hoadon ? {
+        ma_hd: r.hoadon.ma_hd,
+        ngay_tao: toDateOnlyString(r.hoadon.ngay_tao),
+        tong_tien_sau_giam: toNumber(r.hoadon.tong_tien_sau_giam),
+        ma_nv: r.hoadon.ma_nv,
+        ho_ten_nv: r.hoadon.nhanvien.ho_ten_nv,
+        ma_kh: r.hoadon.ma_kh,
+        ho_ten_kh: r.hoadon.khachhang.ho_ten_kh,
+      } : null,
+    })));
+  } catch (err) {
+    next(err);
+  }
+});
+
+// POST /orders/:ma_hd/confirm-delete - Admin confirm delete order
+router.post("/:ma_hd/confirm-delete", checkRole("admin"), async (req, res, next) => {
+  try {
+    const { ma_hd } = req.params;
+    const data = req.body || {};
+
+    const existing = await prisma.hoaDon.findUnique({
+      where: { ma_hd },
+      include: { chitiet: true, voucher: true },
+    });
+    if (!existing) return res.status(404).json({ detail: "Hóa đơn không tồn tại" });
+
+    const deleteReq = await prisma.deleteRequest.findFirst({
+      where: { ma_hd, trang_thai: "pending" },
+    });
+
+    await prisma.$transaction(async (tx) => {
+      for (const item of existing.chitiet) {
+        await tx.bienTheSKU.update({
+          where: { ma_sku: item.ma_sku },
+          data: { so_luong_ton: { increment: item.so_luong } },
+        });
+      }
+
+      if (existing.ma_voucher) {
+        await tx.voucher.update({
+          where: { ma_voucher: existing.ma_voucher },
+          data: { so_luong_da_dung: { decrement: 1 } },
+        });
+      }
+
+      const kh = await tx.khachHang.findUnique({ where: { ma_kh: existing.ma_kh } });
+      if (kh) {
+        const revertedPoints = Math.max(0, kh.diem_tich_luy - Math.floor(toNumber(existing.tong_tien_sau_giam) / 10000));
+        const revertedTier = await determineTier(revertedPoints, tx);
+        await tx.khachHang.update({
+          where: { ma_kh: existing.ma_kh },
+          data: { 
+            diem_tich_luy: revertedPoints,
+            ten_hang: revertedTier
+          }
+        });
+      }
+
+      await tx.chiTietHoaDon.deleteMany({ where: { ma_hd } });
+      await tx.hoaDon.delete({ where: { ma_hd } });
+
+      if (deleteReq) {
+        await tx.deleteRequest.update({
+          where: { id: deleteReq.id },
+          data: {
+            trang_thai: "approved",
+            ngay_xu_ly: new Date(),
+            ghi_chu: data.ghi_chu || null,
+          },
+        });
+      }
+    });
+
+    res.json({ message: "Xóa hóa đơn và hoàn tồn kho thành công" });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// POST /orders/:ma_hd/reject-delete - Admin reject delete request
+router.post("/:ma_hd/reject-delete", checkRole("admin"), async (req, res, next) => {
+  try {
+    const { ma_hd } = req.params;
+    const data = req.body || {};
+
+    const deleteReq = await prisma.deleteRequest.findFirst({
+      where: { ma_hd, trang_thai: "pending" },
+    });
+    if (!deleteReq) {
+      return res.status(404).json({ detail: "Không tìm thấy yêu cầu xóa hóa đơn đang chờ xử lý" });
+    }
+
+    await prisma.deleteRequest.update({
+      where: { id: deleteReq.id },
+      data: {
+        trang_thai: "rejected",
+        ngay_xu_ly: new Date(),
+        ghi_chu: data.ghi_chu || "Từ chối",
+      },
+    });
+
+    res.json({ message: "Yêu cầu xóa hóa đơn đã bị từ chối" });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// DELETE /orders/:ma_hd - Admin can delete directly
 router.delete("/:ma_hd", checkRole("admin"), async (req, res, next) => {
   try {
     const { ma_hd } = req.params;
@@ -235,6 +410,115 @@ router.delete("/:ma_hd", checkRole("admin"), async (req, res, next) => {
     });
 
     res.json({ message: "Xóa hóa đơn và hoàn tồn kho thành công" });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// =========================================================================
+// YÊU CẦU XÓA SẢN PHẨM TRONG GIỎ HÀNG (CASHIER -> ADMIN)
+// =========================================================================
+
+// POST /orders/cart/delete-request - Cashier request to remove item from cart
+router.post("/cart/delete-request", checkRole("admin", "cashier"), async (req, res, next) => {
+  try {
+    const data = req.body || {};
+    const ma_nv_cashier = req.user.ma_nv;
+    const { ma_sku, ly_do } = data;
+
+    if (!ma_sku) return res.status(400).json({ detail: "Vui lòng cung cấp mã SKU cần xóa" });
+
+    const request = await prisma.cartItemDeleteRequest.create({
+      data: {
+        ma_nv_cashier,
+        ma_sku,
+        ly_do: ly_do || null,
+      },
+    });
+
+    res.status(201).json({ id: request.id, ma_sku, trang_thai: request.trang_thai });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// GET /orders/cart/delete-requests/status/:id - Cashier polls status
+router.get("/cart/delete-requests/status/:id", checkRole("admin", "cashier"), async (req, res, next) => {
+  try {
+    const request = await prisma.cartItemDeleteRequest.findUnique({
+      where: { id: req.params.id },
+    });
+    if (!request) return res.status(404).json({ detail: "Yêu cầu không tồn tại" });
+    
+    res.json({ id: request.id, trang_thai: request.trang_thai });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// GET /orders/cart/delete-requests/list - Admin view pending requests
+router.get("/cart/delete-requests/list", checkRole("admin"), async (req, res, next) => {
+  try {
+    const skip = Number(req.query.skip || 0);
+    const take = Number(req.query.limit || 100);
+    const trang_thai = req.query.trang_thai || "pending";
+
+    const requests = await prisma.cartItemDeleteRequest.findMany({
+      where: trang_thai ? { trang_thai } : {},
+      skip,
+      take,
+      orderBy: { ngay_tao: "desc" },
+      include: { 
+        nhanvien: { select: { ma_nv: true, ho_ten_nv: true } }
+      },
+    });
+
+    res.json(requests.map(r => ({
+      id: r.id,
+      ma_sku: r.ma_sku,
+      ma_nv_cashier: r.ma_nv_cashier,
+      ten_nv_cashier: r.nhanvien.ho_ten_nv,
+      ly_do: r.ly_do,
+      ngay_tao: r.ngay_tao,
+      trang_thai: r.trang_thai,
+      ngay_xu_ly: r.ngay_xu_ly
+    })));
+  } catch (err) {
+    next(err);
+  }
+});
+
+// POST /orders/cart/delete-requests/:id/approve - Admin approve
+router.post("/cart/delete-requests/:id/approve", checkRole("admin"), async (req, res, next) => {
+  try {
+    const request = await prisma.cartItemDeleteRequest.findUnique({ where: { id: req.params.id } });
+    if (!request) return res.status(404).json({ detail: "Yêu cầu không tồn tại" });
+    if (request.trang_thai !== "pending") return res.status(400).json({ detail: "Yêu cầu này đã được xử lý" });
+
+    await prisma.cartItemDeleteRequest.update({
+      where: { id: req.params.id },
+      data: { trang_thai: "approved", ngay_xu_ly: new Date() }
+    });
+
+    res.json({ message: "Đã duyệt yêu cầu xóa" });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// POST /orders/cart/delete-requests/:id/reject - Admin reject
+router.post("/cart/delete-requests/:id/reject", checkRole("admin"), async (req, res, next) => {
+  try {
+    const request = await prisma.cartItemDeleteRequest.findUnique({ where: { id: req.params.id } });
+    if (!request) return res.status(404).json({ detail: "Yêu cầu không tồn tại" });
+    if (request.trang_thai !== "pending") return res.status(400).json({ detail: "Yêu cầu này đã được xử lý" });
+
+    await prisma.cartItemDeleteRequest.update({
+      where: { id: req.params.id },
+      data: { trang_thai: "rejected", ngay_xu_ly: new Date() }
+    });
+
+    res.json({ message: "Đã từ chối yêu cầu xóa" });
   } catch (err) {
     next(err);
   }

@@ -1,5 +1,10 @@
 const fs = require('fs');
-let html = fs.readFileSync('index.html', 'utf8');
+const path = require('path');
+
+const htmlPath = path.join(__dirname, '../html/index.html');
+const jsPath = path.join(__dirname, '../js/app.js');
+
+let html = fs.readFileSync(htmlPath, 'utf8');
 
 // Replace table controls
 html = html.replace(/<button class="btn-filter"[\s\S]*?filterTable\('crud-customers-body','search-customers'\).*?>[\s\S]*?Lọc<\/button>/, '<button class="btn-filter" onclick="openFilterCustomerModal()"><i class="fas fa-filter"></i> Lọc chi tiết</button>');
@@ -29,9 +34,11 @@ const modals = `
                     <div class="col-sm-8">
                         <select id="f-c-hang" class="form-control">
                             <option value="">-- Tất cả --</option>
-                            <option value="Bronze">Bronze</option>
-                            <option value="Silver">Silver</option>
-                            <option value="Gold">Gold</option>
+                             <option value="Vô hạng">Vô hạng</option>
+                             <option value="Sắt">Sắt</option>
+                             <option value="Đồng">Đồng</option>
+                             <option value="Vàng">Vàng</option>
+                             <option value="Bạch kim">Bạch kim</option>
                         </select>
                     </div>
                 </div>
@@ -64,10 +71,9 @@ const modals = `
                     <div class="col-sm-8">
                         <select id="f-o-trangthai" class="form-control">
                             <option value="">-- Tất cả --</option>
-                            <option value="Pending">Pending</option>
-                            <option value="Processing">Processing</option>
-                            <option value="Completed">Completed</option>
-                            <option value="Cancelled">Cancelled</option>
+                            <option value="Hoàn thành">Hoàn thành</option>
+                            <option value="Đang xử lý">Đang xử lý</option>
+                            <option value="Đã hủy">Đã hủy</option>
                         </select>
                     </div>
                 </div>
@@ -76,9 +82,8 @@ const modals = `
                     <div class="col-sm-8">
                         <select id="f-o-tt" class="form-control">
                             <option value="">-- Tất cả --</option>
-                            <option value="Cash">Cash</option>
-                            <option value="Card">Card</option>
-                            <option value="Transfer">Transfer</option>
+                            <option value="Tiền mặt">Tiền mặt</option>
+                            <option value="Chuyển khoản">Chuyển khoản</option>
                         </select>
                     </div>
                 </div>
@@ -86,7 +91,7 @@ const modals = `
         </div>
         <div class="modal-footer">
             <button class="btn btn-primary" onclick="applyFilterOrder()"><i class="fas fa-filter"></i> Áp dụng Lọc</button>
-            <button class="btn btn-secondary" onclick="closeAllModals()"><i class="fas fa-times"></i> Hủy</button>
+            <button class="btn btn-secondary" onclick="closeAllModals()">&times;</button>
         </div>
     </div>
 
@@ -143,17 +148,28 @@ const modals = `
             <button class="btn btn-secondary" onclick="closeAllModals()"><i class="fas fa-times"></i> Hủy</button>
         </div>
     </div>
-</script>
 `;
 
 if (!html.includes('id="modal-filter-customer"')) {
-    html = html.replace('</script>', modals);
+    html = html.replace('</body>', modals + '</body>');
+} else {
+    // If modal already exists, we should update the select options
+    html = html.replace(/<select id="f-c-hang"[\s\S]*?<\/select>/, `
+                        <select id="f-c-hang" class="form-control">
+                            <option value="">-- Tất cả --</option>
+                             <option value="Vô hạng">Vô hạng</option>
+                             <option value="Sắt">Sắt</option>
+                             <option value="Đồng">Đồng</option>
+                             <option value="Vàng">Vàng</option>
+                             <option value="Bạch kim">Bạch kim</option>
+                        </select>
+    `);
 }
 
-fs.writeFileSync('index.html', html, 'utf8');
+fs.writeFileSync(htmlPath, html, 'utf8');
 
 // Also update app.js with the filter functions
-let js = fs.readFileSync('js/app.js', 'utf8');
+let js = fs.readFileSync(jsPath, 'utf8');
 
 const filterLogic = `
 // ================= ADVANCED FILTERS =================
@@ -172,7 +188,7 @@ async function applyFilterCustomer() {
         const res = await fetch(\`\${API_BASE_URL}/customers\`);
         let items = await res.json();
         
-        if (hang) items = items.filter(x => x.hang_thanh_vien === hang);
+        if (hang) items = items.filter(x => x.ten_hang === hang);
         if (!isNaN(minDiem)) items = items.filter(x => (x.diem_tich_luy||0) >= minDiem);
         
         const crudBody = document.getElementById('crud-customers-body');
@@ -190,7 +206,7 @@ async function applyFilterCustomer() {
                     <td class="text-center">\${item.sdt || ''}</td>
                     <td>\${item.email || ''}</td>
                     <td class="text-center">\${item.diem_tich_luy}</td>
-                    <td class="text-center">\${item.hang_thanh_vien}</td>
+                    <td class="text-center">\${item.ten_hang}</td>
                     <td class="text-center">
                         <div class="btn-group">
                             <button class="btn btn-sm btn-warning" onclick="openEditCustomerModal('\${item.ma_kh}')"><i class="fas fa-edit"></i></button>
@@ -243,7 +259,7 @@ async function applyFilterOrder() {
                 tr.innerHTML = \`
                     <td class="text-center"><span class="badge-secondary border-0">\${item.ma_hd}</span></td>
                     <td class="text-center">\${item.ngay_tao}</td>
-                    <td class="text-center">\${item.tong_tien.toLocaleString('vi-VN')} đ</td>
+                    <td class="text-center">\${item.tong_tien_sau_giam.toLocaleString('vi-VN')} đ</td>
                     <td class="text-center">\${item.phuong_thuc_thanh_toan}</td>
                     <td class="text-center">\${item.trang_thai}</td>
                     <td class="text-center">\${item.ma_kh}</td>
@@ -380,6 +396,10 @@ function clearFilterAPI_Supplier() {
 
 if (!js.includes('applyFilterSupplier')) {
     js += filterLogic;
-    fs.writeFileSync('js/app.js', js, 'utf8');
+} else {
+    js = js.replace(/if \(hang\) items = items\.filter\(x => x\.hang_thanh_vien === hang\);/g, 'if (hang) items = items.filter(x => x.ten_hang === hang);');
+    js = js.replace(/<td class="text-center">\${item\.hang_thanh_vien}<\/td>/g, '<td class="text-center">${item.ten_hang}</td>');
 }
+
+fs.writeFileSync(jsPath, js, 'utf8');
 console.log('done formatting filters');

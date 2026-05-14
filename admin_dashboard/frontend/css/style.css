@@ -855,3 +855,15 @@ body.logged-out-layout .hamburger { display: none !important; }
 }
 .modal-footer.justify-content-center { justify-content: center !important; }
 .modal-footer .btn { font-size: 0.9rem; padding: 0.4rem 1rem; font-weight: 500; display: flex; align-items: center; gap: 6px; }
+
+@keyframes shake {
+  0% { transform: translate(-50%, -50%) rotate(0deg); }
+  25% { transform: translate(-52%, -50%) rotate(-2deg); }
+  50% { transform: translate(-48%, -50%) rotate(2deg); }
+  75% { transform: translate(-52%, -50%) rotate(-2deg); }
+  100% { transform: translate(-50%, -50%) rotate(0deg); }
+}
+
+.shake-animation {
+  animation: shake 0.4s ease-in-out;
+}
