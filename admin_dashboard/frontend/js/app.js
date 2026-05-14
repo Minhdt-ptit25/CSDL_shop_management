@@ -2354,16 +2354,29 @@ async function openImportDetail(maPn) {
         `).join('');
 
         document.getElementById('import-detail-content').innerHTML = `
-            <div style="background:#f8f9fa; border-radius:8px; padding:1rem; margin-bottom:1rem;">
-                <div class="row" style="margin:0; gap:0.5rem 0;">
-                    <div class="col-6"><small class="text-muted">Mã phiếu nhập</small><div style="font-weight:700;">${item.ma_pn}</div></div>
-                    <div class="col-6"><small class="text-muted">Ngày nhập</small><div>${item.ngay_nhap}</div></div>
-                    <div class="col-6"><small class="text-muted">Mã NCC</small><div>${item.ma_ncc}</div></div>
-                    <div class="col-6"><small class="text-muted">Mã NV</small><div>${item.ma_nv}</div></div>
-                    <div class="col-12"><small class="text-muted">Tổng tiền nhập</small><div style="font-size:1.1rem;font-weight:700;color:#d92550;">${formatCurrencyVN(item.tong_tien)}</div></div>
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:1rem;">
+                <div style="background:#f8f9fa; border-radius:8px; padding:0.75rem 1rem; border-left:3px solid #4da6ff;">
+                    <div style="font-size:0.75rem; color:#888; margin-bottom:2px;">Mã phiếu nhập</div>
+                    <div style="font-weight:700; font-size:1rem;">${item.ma_pn}</div>
+                </div>
+                <div style="background:#f8f9fa; border-radius:8px; padding:0.75rem 1rem; border-left:3px solid #4da6ff;">
+                    <div style="font-size:0.75rem; color:#888; margin-bottom:2px;">Ngày nhập</div>
+                    <div style="font-weight:600;">${item.ngay_nhap}</div>
+                </div>
+                <div style="background:#f8f9fa; border-radius:8px; padding:0.75rem 1rem; border-left:3px solid #6f42c1;">
+                    <div style="font-size:0.75rem; color:#888; margin-bottom:2px;">Mã NCC</div>
+                    <div style="font-weight:600;">${item.ma_ncc}</div>
+                </div>
+                <div style="background:#f8f9fa; border-radius:8px; padding:0.75rem 1rem; border-left:3px solid #6f42c1;">
+                    <div style="font-size:0.75rem; color:#888; margin-bottom:2px;">Mã NV</div>
+                    <div style="font-weight:600;">${item.ma_nv}</div>
+                </div>
+                <div style="grid-column:1/-1; background:#fff3f5; border-radius:8px; padding:0.75rem 1rem; border-left:3px solid #d92550; display:flex; justify-content:space-between; align-items:center;">
+                    <div style="font-size:0.75rem; color:#888;">Tổng tiền nhập</div>
+                    <div style="font-size:1.2rem; font-weight:700; color:#d92550;">${formatCurrencyVN(item.tong_tien)}</div>
                 </div>
             </div>
-            <h6 style="font-weight:700; margin-bottom:0.5rem;">Chi tiết sản phẩm nhập</h6>
+            <h6 style="font-weight:700; margin-bottom:0.5rem; color:#333;">Chi tiết sản phẩm nhập</h6>
             <div class="table-responsive">
                 <table class="table table-sm table-bordered" style="font-size:0.875rem;">
                     <thead class="thead-light">
