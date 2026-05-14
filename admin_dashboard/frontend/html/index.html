@@ -287,15 +287,14 @@
                                                     <th class="sortable" data-col="1">Tên Sản phẩm</th>
                                                     <th class="text-center sortable" data-col="2">Danh mục</th>
                                                     <th class="text-center sortable" data-col="3">Chất liệu</th>
-                                                    <th class="text-center sortable" data-col="4">Mùa vụ</th>
-                                                    <th class="text-center sortable" data-col="5">Giới tính</th>
-                                                    <th class="text-center sortable" data-col="6">Mã NCC</th>
+                                                    <th class="text-center sortable" data-col="4">Giới tính</th>
+                                                    <th class="text-center sortable" data-col="5">Mã NCC</th>
                                                     <th class="text-center">Hành động</th>
                                                 </tr>
                                             </thead>
                                             <tbody id="crud-products-body">
                                                 <tr>
-                                                    <td colspan="8" class="text-center">Đang tải dữ liệu...</td>
+                                                    <td colspan="7" class="text-center">Đang tải dữ liệu...</td>
                                                 </tr>
                                             </tbody>
                                         </table>
@@ -344,17 +343,15 @@
                                                 <tr>
                                                     <th class="text-center sortable" data-col="0">Mã KH</th>
                                                     <th class="sortable" data-col="1">Họ tên KH</th>
-                                                    <th class="sortable" data-col="2">Địa chỉ</th>
-                                                    <th class="text-center sortable" data-col="3">SĐT</th>
-                                                    <th class="sortable" data-col="4">Email</th>
-                                                    <th class="text-center sortable" data-col="5">Điểm</th>
-                                                    <th class="text-center sortable" data-col="6">Hạng</th>
+                                                    <th class="text-center sortable" data-col="2">SĐT</th>
+                                                    <th class="text-center sortable" data-col="3">Điểm</th>
+                                                    <th class="text-center sortable" data-col="4">Hạng</th>
                                                     <th class="text-center">Hành động</th>
                                                 </tr>
                                             </thead>
                                             <tbody id="crud-customers-body">
                                                 <tr>
-                                                    <td colspan="8" class="text-center">Đang tải dữ liệu...</td>
+                                                    <td colspan="6" class="text-center">Đang tải dữ liệu...</td>
                                                 </tr>
                                             </tbody>
                                         </table>
@@ -584,11 +581,6 @@
                             required></div>
                 </div>
                 <div class="form-group row">
-                    <label class="col-sm-4 col-form-label">Mùa vụ</label>
-                    <div class="col-sm-8"><input type="text" id="p-muavu" class="form-control" placeholder="Ví dụ: Xuân Hè"
-                            required></div>
-                </div>
-                <div class="form-group row">
                     <label class="col-sm-4 col-form-label">Giới tính</label>
                     <div class="col-sm-8"><input type="text" id="p-gioitinh" class="form-control" placeholder="Ví dụ: Nam/Nữ/Unisex"
                             required></div>
@@ -691,16 +683,6 @@
                     <label class="col-sm-4 col-form-label">Số điện thoại</label>
                     <div class="col-sm-8"><input type="text" id="c-sdt" class="form-control" placeholder="Số điện thoại"
                             required></div>
-                </div>
-                <div class="form-group row">
-                    <label class="col-sm-4 col-form-label">Email</label>
-                    <div class="col-sm-8"><input type="email" id="c-email" class="form-control" placeholder="Email"
-                            required></div>
-                </div>
-                <div class="form-group row">
-                    <label class="col-sm-4 col-form-label">Địa chỉ</label>
-                    <div class="col-sm-8"><input type="text" id="c-diachi" class="form-control"
-                            placeholder="Ví dụ: Hà Nội" required></div>
                 </div>
                 <div class="form-group row">
                     <label class="col-sm-4 col-form-label">Điểm tích lũy</label>
@@ -909,9 +891,10 @@
                     <div class="col-sm-8">
                         <select id="f-c-hang" class="form-control">
                             <option value="">-- Tất cả --</option>
-                            <option value="Bronze">Bronze</option>
-                            <option value="Silver">Silver</option>
-                            <option value="Gold">Gold</option>
+                            <option value="Vô hạng">Vô hạng</option>
+                            <option value="Sắt">Sắt</option>
+                            <option value="Đồng">Đồng</option>
+                            <option value="Vàng">Vàng</option>
                         </select>
                     </div>
                 </div>
