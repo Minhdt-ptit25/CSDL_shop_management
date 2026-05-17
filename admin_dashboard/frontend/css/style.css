@@ -692,6 +692,8 @@ body {
 .table-info-subheading { font-size: 0.85rem; color: #888; }
 .badge-secondary { background-color: #6c757d; color: white; padding: 5px 10px; border-radius: 6px; font-size: 0.75rem; font-weight: 600; }
 .badge-info { background-color: #17a2b8; color: white; padding: 5px 10px; border-radius: 6px; font-size: 0.75rem; font-weight: 600; }
+.badge-success { background-color: #28a745; color: white; padding: 5px 10px; border-radius: 6px; font-size: 0.75rem; font-weight: 600; }
+.badge-warning { background-color: #ffc107; color: #212529; padding: 5px 10px; border-radius: 6px; font-size: 0.75rem; font-weight: 600; }
 .admin-avatar { width: 42px; height: 42px; object-fit: cover; object-position: center 25%; }
 
 .logo-text {

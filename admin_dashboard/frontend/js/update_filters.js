@@ -35,10 +35,9 @@ const modals = `
                         <select id="f-c-hang" class="form-control">
                             <option value="">-- Tất cả --</option>
                              <option value="Vô hạng">Vô hạng</option>
-                             <option value="Sắt">Sắt</option>
                              <option value="Đồng">Đồng</option>
+                             <option value="Bạc">Bạc</option>
                              <option value="Vàng">Vàng</option>
-                             <option value="Bạch kim">Bạch kim</option>
                         </select>
                     </div>
                 </div>
@@ -158,10 +157,9 @@ if (!html.includes('id="modal-filter-customer"')) {
                         <select id="f-c-hang" class="form-control">
                             <option value="">-- Tất cả --</option>
                              <option value="Vô hạng">Vô hạng</option>
-                             <option value="Sắt">Sắt</option>
                              <option value="Đồng">Đồng</option>
+                             <option value="Bạc">Bạc</option>
                              <option value="Vàng">Vàng</option>
-                             <option value="Bạch kim">Bạch kim</option>
                         </select>
     `);
 }

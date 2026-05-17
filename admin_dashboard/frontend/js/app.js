@@ -100,15 +100,21 @@ const formatCurrency = (amount) => {
     return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(amount);
 };
 
-// Ngưỡng điểm theo ERD: Vô hạng < Sắt < Đồng < Vàng
+// Ngưỡng điểm mới: Vô hạng < Đồng < Bạc < Vàng
 const getMemberTier = (points) => {
-    if (points >= 250) return 'Vàng';
-    if (points >= 150) return 'Đồng';
-    if (points >= 50)  return 'Sắt';
-    return 'Vô hạng';
     if (points >= 2000) return 'Vàng';
     if (points >= 500) return 'Bạc';
-    return 'Đồng';
+    if (points >= 100) return 'Đồng';
+    return 'Vô hạng';
+};
+
+const getTierBadgeClass = (tier) => {
+    switch (tier) {
+        case 'Vàng': return 'badge badge-success';
+        case 'Bạc': return 'badge badge-info';
+        case 'Đồng': return 'badge badge-warning';
+        default: return 'badge badge-secondary';
+    }
 };
 
 let categorySalesChart = null;
@@ -406,7 +412,7 @@ async function fetchCustomers() {
         const crudBody = document.getElementById('crud-customers-body');
         if (!crudBody) return;
         crudBody.innerHTML = '';
-        if (items.length === 0) return crudBody.innerHTML = `<tr><td colspan="7" class="text-center">Không có dữ liệu.</td></tr>`;
+        if (items.length === 0) return crudBody.innerHTML = `<tr><td colspan="8" class="text-center">Không có dữ liệu.</td></tr>`;
         
         items.forEach(item => {
             const tr = document.createElement('tr');
@@ -417,7 +423,7 @@ async function fetchCustomers() {
                 <td class="text-center">${item.sdt}</td>
                 <td>${item.email || ''}</td>
                 <td class="text-center">${item.diem_tich_luy}</td>
-                <td class="text-center"><span class="badge-info">${item.ten_hang}</span></td>
+                <td class="text-center"><span class="${getTierBadgeClass(item.ten_hang)}">${item.ten_hang}</span></td>
                 <td class="text-center">
                     <div class="btn-group">
                         <button class="btn btn-sm btn-warning" onclick="openEditCustomerModal('${item.ma_kh}')"><i class="fas fa-edit"></i></button>
