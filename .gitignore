@@ -55,3 +55,5 @@ Desktop.ini
 # node_modules
 node_modules/
 admin_dashboard/backend/node_modules/
+.postman/
+postman/
