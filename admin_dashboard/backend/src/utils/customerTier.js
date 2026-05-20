@@ -25,7 +25,7 @@ async function determineTier(points, tx = prisma) {
       return tier.ten_hang;
     }
   }
-  return "Đồng";
+  return "Vô hạng";
 }
 
 module.exports = { calcPoints, determineTier };

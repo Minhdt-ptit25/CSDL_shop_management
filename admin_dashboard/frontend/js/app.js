@@ -1,4 +1,51 @@
 const API_BASE_URL = 'http://localhost:8000/api/v1';
+const PAGE_SIZE = 15;
+const paginationState = {
+    products: 1,
+    customers: 1,
+    orders: 1,
+    employees: 1,
+    suppliers: 1,
+    imports: 1,
+    requests: 1,
+};
+
+function getResponseTotalCount(response, fallbackCount) {
+    const value = response.headers.get('X-Total-Count');
+    const parsed = Number(value);
+    return Number.isFinite(parsed) && parsed >= 0 ? parsed : fallbackCount;
+}
+
+function renderPagination(containerId, currentPage, totalPages, viewName) {
+    const container = document.getElementById(containerId);
+    if (!container) return;
+    if (totalPages <= 1) {
+        container.style.display = 'none';
+        container.innerHTML = '';
+        return;
+    }
+
+    container.style.display = 'flex';
+    container.innerHTML = `
+        <div class="pagination-nav">
+            <button class="btn btn-sm btn-secondary" ${currentPage <= 1 ? 'disabled' : ''} onclick="goToPage(${currentPage - 1}, '${viewName}')">Trước</button>
+            <span class="pagination-label">Trang ${currentPage} / ${totalPages}</span>
+            <button class="btn btn-sm btn-secondary" ${currentPage >= totalPages ? 'disabled' : ''} onclick="goToPage(${currentPage + 1}, '${viewName}')">Sau</button>
+        </div>
+    `;
+}
+
+function goToPage(page, viewName) {
+    if (page < 1) return;
+    paginationState[viewName] = page;
+    const fetchFn = viewFetchMap[viewName];
+    if (fetchFn) fetchFn(page);
+}
+
+function paginateArray(items, page) {
+    const start = (page - 1) * PAGE_SIZE;
+    return items.slice(start, start + PAGE_SIZE);
+}
 
 // ── Search / Filter / Sort ──────────────────────────────────────────────────
 
@@ -100,11 +147,12 @@ const formatCurrency = (amount) => {
     return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(amount);
 };
 
-// Ngưỡng điểm mới: Vô hạng < Đồng < Bạc < Vàng
+// Ngưỡng điểm mới: Vô hạng < Sắt < Đồng < Bạc < Vàng
 const getMemberTier = (points) => {
     if (points >= 2000) return 'Vàng';
     if (points >= 500) return 'Bạc';
     if (points >= 100) return 'Đồng';
+    if (points >= 50) return 'Sắt';
     return 'Vô hạng';
 };
 
@@ -113,7 +161,8 @@ const getTierBadgeClass = (tier) => {
         case 'Vàng': return 'badge badge-success';
         case 'Bạc': return 'badge badge-info';
         case 'Đồng': return 'badge badge-warning';
-        default: return 'badge badge-secondary';
+        case 'Sắt': return 'badge badge-secondary';
+        default: return 'badge badge-dark';
     }
 };
 
@@ -338,23 +387,28 @@ async function fetchStats() {
 }
 
 // Fetch Products
-async function fetchProducts() {
+async function fetchProducts(page = 1) {
     try {
-        const response = await fetch(`${API_BASE_URL}/products`, {
+        const response = await fetch(`${API_BASE_URL}/products?skip=${(page - 1) * PAGE_SIZE}&limit=${PAGE_SIZE}`, {
             headers: { 'Authorization': `Bearer ${localStorage.getItem('adminToken')}` }
         });
         const products = await response.json();
-        
+        const totalCount = getResponseTotalCount(response, products.length);
+        const totalPages = Math.max(1, Math.ceil(totalCount / PAGE_SIZE));
+        paginationState.products = page;
+
         const dashboardBody = document.getElementById('products-table-body');
         const crudBody = document.getElementById('crud-products-body');
+        const productsPagination = document.getElementById('products-pagination');
         
         if (dashboardBody) dashboardBody.innerHTML = '';
         if (crudBody) crudBody.innerHTML = '';
         
         if (products.length === 0) {
-            const emptyMsg = `<tr><td colspan="5" class="text-center">Không tìm thấy sản phẩm.</td></tr>`;
+            const emptyMsg = `<tr><td colspan="8" class="text-center">Không tìm thấy sản phẩm.</td></tr>`;
             if (dashboardBody) dashboardBody.innerHTML = emptyMsg;
             if (crudBody) crudBody.innerHTML = emptyMsg;
+            renderPagination('products-pagination', page, totalPages, 'products');
             return;
         }
 
@@ -396,6 +450,7 @@ async function fetchProducts() {
                 crudBody.appendChild(tr2);
             }
         });
+        renderPagination('products-pagination', page, totalPages, 'products');
         initSortable('crud-products-body');
     } catch (error) {
         console.error('Error fetching products:', error);
@@ -403,16 +458,24 @@ async function fetchProducts() {
 }
 
 // Fetch Customers
-async function fetchCustomers() {
+async function fetchCustomers(page = 1) {
     try {
-        const response = await fetch(`${API_BASE_URL}/customers`, {
+        const response = await fetch(`${API_BASE_URL}/customers?skip=${(page - 1) * PAGE_SIZE}&limit=${PAGE_SIZE}`, {
             headers: { 'Authorization': `Bearer ${localStorage.getItem('adminToken')}` }
         });
         const items = await response.json();
+        const totalCount = getResponseTotalCount(response, items.length);
+        const totalPages = Math.max(1, Math.ceil(totalCount / PAGE_SIZE));
+        paginationState.customers = page;
+
         const crudBody = document.getElementById('crud-customers-body');
         if (!crudBody) return;
         crudBody.innerHTML = '';
-        if (items.length === 0) return crudBody.innerHTML = `<tr><td colspan="8" class="text-center">Không có dữ liệu.</td></tr>`;
+        if (items.length === 0) {
+            crudBody.innerHTML = `<tr><td colspan="8" class="text-center">Không có dữ liệu.</td></tr>`;
+            renderPagination('customers-pagination', page, totalPages, 'customers');
+            return;
+        }
         
         items.forEach(item => {
             const tr = document.createElement('tr');
@@ -433,21 +496,32 @@ async function fetchCustomers() {
             `;
             crudBody.appendChild(tr);
         });
+        renderPagination('customers-pagination', page, totalPages, 'customers');
         initSortable('crud-customers-body');
-    } catch (e) {}
+    } catch (e) {
+        console.error('Error fetching customers:', e);
+    }
 }
 
 // Fetch Orders
-async function fetchOrders() {
+async function fetchOrders(page = 1) {
     try {
-        const response = await fetch(`${API_BASE_URL}/orders`, {
+        const response = await fetch(`${API_BASE_URL}/orders?skip=${(page - 1) * PAGE_SIZE}&limit=${PAGE_SIZE}`, {
             headers: { 'Authorization': `Bearer ${localStorage.getItem('adminToken')}` }
         });
         const items = await response.json();
+        const totalCount = getResponseTotalCount(response, items.length);
+        const totalPages = Math.max(1, Math.ceil(totalCount / PAGE_SIZE));
+        paginationState.orders = page;
+
         const crudBody = document.getElementById('crud-orders-body');
         if (!crudBody) return;
         crudBody.innerHTML = '';
-        if (items.length === 0) return crudBody.innerHTML = `<tr><td colspan="7" class="text-center">Không có dữ liệu.</td></tr>`;
+        if (items.length === 0) {
+            crudBody.innerHTML = `<tr><td colspan="8" class="text-center">Không có dữ liệu.</td></tr>`;
+            renderPagination('orders-pagination', page, totalPages, 'orders');
+            return;
+        }
         
         items.forEach(item => {
             const tr = document.createElement('tr');
@@ -468,21 +542,32 @@ async function fetchOrders() {
             `;
             crudBody.appendChild(tr);
         });
+        renderPagination('orders-pagination', page, totalPages, 'orders');
         initSortable('crud-orders-body');
-    } catch (e) {}
+    } catch (e) {
+        console.error('Error fetching orders:', e);
+    }
 }
 
 // Fetch Employees
-async function fetchEmployees() {
+async function fetchEmployees(page = 1) {
     try {
-        const response = await fetch(`${API_BASE_URL}/employees`, {
+        const response = await fetch(`${API_BASE_URL}/employees?skip=${(page - 1) * PAGE_SIZE}&limit=${PAGE_SIZE}`, {
             headers: { 'Authorization': `Bearer ${localStorage.getItem('adminToken')}` }
         });
         const items = await response.json();
+        const totalCount = getResponseTotalCount(response, items.length);
+        const totalPages = Math.max(1, Math.ceil(totalCount / PAGE_SIZE));
+        paginationState.employees = page;
+
         const crudBody = document.getElementById('crud-employees-body');
         if (!crudBody) return;
         crudBody.innerHTML = '';
-        if (items.length === 0) return crudBody.innerHTML = `<tr><td colspan="6" class="text-center">Không có dữ liệu.</td></tr>`;
+        if (items.length === 0) {
+            crudBody.innerHTML = `<tr><td colspan="7" class="text-center">Không có dữ liệu.</td></tr>`;
+            renderPagination('employees-pagination', page, totalPages, 'employees');
+            return;
+        }
         
         items.forEach(item => {
             const tr = document.createElement('tr');
@@ -502,21 +587,32 @@ async function fetchEmployees() {
             `;
             crudBody.appendChild(tr);
         });
+        renderPagination('employees-pagination', page, totalPages, 'employees');
         initSortable('crud-employees-body');
-    } catch (e) {}
+    } catch (e) {
+        console.error('Error fetching employees:', e);
+    }
 }
 
 // Fetch Suppliers
-async function fetchSuppliers() {
+async function fetchSuppliers(page = 1) {
     try {
-        const response = await fetch(`${API_BASE_URL}/suppliers`, {
+        const response = await fetch(`${API_BASE_URL}/suppliers?skip=${(page - 1) * PAGE_SIZE}&limit=${PAGE_SIZE}`, {
             headers: { 'Authorization': `Bearer ${localStorage.getItem('adminToken')}` }
         });
         const items = await response.json();
+        const totalCount = getResponseTotalCount(response, items.length);
+        const totalPages = Math.max(1, Math.ceil(totalCount / PAGE_SIZE));
+        paginationState.suppliers = page;
+
         const crudBody = document.getElementById('crud-suppliers-body');
         if (!crudBody) return;
         crudBody.innerHTML = '';
-        if (items.length === 0) return crudBody.innerHTML = `<tr><td colspan="5" class="text-center">Không có dữ liệu.</td></tr>`;
+        if (items.length === 0) {
+            crudBody.innerHTML = `<tr><td colspan="6" class="text-center">Không có dữ liệu.</td></tr>`;
+            renderPagination('suppliers-pagination', page, totalPages, 'suppliers');
+            return;
+        }
         
         items.forEach(item => {
             const tr = document.createElement('tr');
@@ -535,6 +631,7 @@ async function fetchSuppliers() {
             `;
             crudBody.appendChild(tr);
         });
+        renderPagination('suppliers-pagination', page, totalPages, 'suppliers');
         initSortable('crud-suppliers-body');
     } catch (e) {
         console.error('Error fetching suppliers:', e);
@@ -542,7 +639,7 @@ async function fetchSuppliers() {
 }
 
 // Fetch Delete Requests (Admin)
-async function fetchRequests() {
+async function fetchRequests(page = 1) {
     try {
         const token = localStorage.getItem('adminToken');
         
@@ -583,15 +680,21 @@ async function fetchRequests() {
         // Sort by date descending
         allRequests.sort((a, b) => b.date - a.date);
 
+        paginationState.requests = page;
+        const pageData = paginateArray(allRequests, page);
+        const totalPages = Math.max(1, Math.ceil(allRequests.length / PAGE_SIZE));
+
         const crudBody = document.getElementById('crud-requests-body');
         if (!crudBody) return;
         crudBody.innerHTML = '';
         
         if (allRequests.length === 0) {
-            return crudBody.innerHTML = `<tr><td colspan="8" class="text-center">Không có yêu cầu chờ duyệt.</td></tr>`;
+            crudBody.innerHTML = `<tr><td colspan="8" class="text-center">Không có yêu cầu chờ duyệt.</td></tr>`;
+            renderPagination('requests-pagination', page, totalPages, 'requests');
+            return;
         }
         
-        allRequests.forEach(item => {
+        pageData.forEach(item => {
             const tr = document.createElement('tr');
             
             let actionBtns = '';
@@ -623,6 +726,7 @@ async function fetchRequests() {
             `;
             crudBody.appendChild(tr);
         });
+        renderPagination('requests-pagination', page, totalPages, 'requests');
     } catch (e) {
         console.error('Error fetching requests:', e);
     }
@@ -1605,7 +1709,7 @@ function onOrderVoucherChange() {
 }
 
 // Map t\u1ef7 l\u1ec7 gi\u1ea3m gi\u00e1 theo h\u1ea1ng th\u00e0nh vi\u00ean (ph\u1ea3i kh\u1edbp v\u1edbi HangThanhVien trong DB)
-const TIER_DISCOUNT_MAP = { 'V\u00e0ng': 10, '\u0110\u1ed3ng': 5, 'S\u1eaft': 2, 'V\u00f4 h\u1ea1ng': 0 };
+const TIER_DISCOUNT_MAP = { 'V\u00e0ng': 10, 'B\u1ea1c': 7, 'D\u1ed3ng': 5, 'S\u1eaft': 2, 'V\u00f4 h\u1ea1ng': 0 };
 function getTierDiscountPct(tenHang) {
     return TIER_DISCOUNT_MAP[tenHang] ?? 0;
 }
@@ -2157,17 +2261,22 @@ function formatCurrencyVN(num) {
 }
 
 // ── Fetch & render list ──────────────────────────────────────────
-async function fetchImports() {
+async function fetchImports(page = 1) {
     try {
-        const response = await fetch(`${API_BASE_URL}/imports`, {
+        const response = await fetch(`${API_BASE_URL}/imports?skip=${(page - 1) * PAGE_SIZE}&limit=${PAGE_SIZE}`, {
             headers: { 'Authorization': `Bearer ${localStorage.getItem('adminToken')}` }
         });
         const items = await response.json();
+        const totalCount = getResponseTotalCount(response, Array.isArray(items) ? items.length : 0);
+        const totalPages = Math.max(1, Math.ceil(totalCount / PAGE_SIZE));
+        paginationState.imports = page;
+
         const crudBody = document.getElementById('crud-imports-body');
         if (!crudBody) return;
         crudBody.innerHTML = '';
         if (!Array.isArray(items) || items.length === 0) {
             crudBody.innerHTML = `<tr><td colspan="8" class="text-center">Không có dữ liệu.</td></tr>`;
+            renderPagination('imports-pagination', page, totalPages, 'imports');
             return;
         }
         items.forEach(item => {
@@ -2193,6 +2302,7 @@ async function fetchImports() {
             `;
             crudBody.appendChild(tr);
         });
+        renderPagination('imports-pagination', page, totalPages, 'imports');
         initSortable('crud-imports-body');
     } catch (e) {
         console.error('fetchImports error', e);

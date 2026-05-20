@@ -31,7 +31,7 @@ model CuaHang {
 
 // ── Hạng thành viên (thay thế uudai_hang) ────────────────────────────────────
 model HangThanhVien {
-  ten_hang        String      @id   // 'Đồng' | 'Bạc' | 'Vàng'
+  ten_hang        String      @id   // 'Vô hạng' | 'Sắt' | 'Đồng' | 'Bạc' | 'Vàng'
   diem_toithieu   Int         @default(0)
   phan_tram_uudai Int         @default(0)
   khachhang       KhachHang[]
@@ -47,7 +47,7 @@ model KhachHang {
   sdt           String   @unique
   email         String?
   diem_tich_luy Int      @default(0)
-  ten_hang      String   @default("Đồng")
+  ten_hang      String   @default("Vô hạng")
 
   hangthanhvien HangThanhVien @relation(fields: [ten_hang], references: [ten_hang])
   hoadons       HoaDon[]

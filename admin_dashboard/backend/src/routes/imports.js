@@ -50,12 +50,14 @@ router.get("/", async (req, res, next) => {
   try {
     const skip = Number(req.query.skip || 0);
     const take = Number(req.query.limit || 100);
+    const totalCount = await prisma.phieuNhap.count();
     const rows = await prisma.phieuNhap.findMany({
       skip,
       take,
       orderBy: { ma_pn: "desc" },
       include: { chitiet: true },
     });
+    res.set("X-Total-Count", String(totalCount));
     res.json(rows.map(serializeImport));
   } catch (err) {
     next(err);
@@ -144,6 +146,11 @@ router.delete("/:ma_pn", checkRole("admin"), async (req, res, next) => {
     await prisma.$transaction(async (tx) => {
       // Reverse stock
       for (const item of existing.chitiet) {
+        const sku = await tx.bienTheSKU.findUnique({ where: { ma_sku: item.ma_sku } });
+        if (!sku) throw new Error(`SKU ${item.ma_sku} không tồn tại`);
+        if (sku.so_luong_ton < item.so_luong) {
+          throw new Error(`Không thể xóa phiếu nhập ${ma_pn} vì SKU ${item.ma_sku} chỉ còn ${sku.so_luong_ton} trong kho`);
+        }
         await tx.bienTheSKU.update({
           where: { ma_sku: item.ma_sku },
           data: { so_luong_ton: { decrement: item.so_luong } },

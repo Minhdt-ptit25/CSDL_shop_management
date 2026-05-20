@@ -35,7 +35,9 @@ router.get("/", async (req, res, next) => {
   try {
     const skip = Number(req.query.skip  || 0);
     const take = Number(req.query.limit || 100);
+    const totalCount = await prisma.khachHang.count();
     const rows = await prisma.khachHang.findMany({ skip, take, orderBy: { ma_kh: "asc" } });
+    res.set("X-Total-Count", String(totalCount));
     res.json(rows.map(serialize));
   } catch (err) {
     next(err);

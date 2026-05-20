@@ -45,16 +45,13 @@ router.get("/", async (req, res, next) => {
   try {
     const skip = Number(req.query.skip  || 0);
     const take = Number(req.query.limit || 100);
-    const rows = await prisma.sanPham.findMany({ 
-      skip, take, 
-      orderBy: { ma_sp: "asc" },
-      include: { bienthes: true }
-    });
-    res.json(rows.map(serialize));
-  } catch (err) {
-    next(err);
-  }
-});
+      const totalCount = await prisma.sanPham.count();
+      const rows = await prisma.sanPham.findMany({ 
+        skip, take, 
+        orderBy: { ma_sp: "asc" },
+        include: { bienthes: true }
+      });
+      res.set("X-Total-Count", String(totalCount));
 
 // POST /products
 router.post("/", checkRole("admin", "warehouse"), async (req, res, next) => {

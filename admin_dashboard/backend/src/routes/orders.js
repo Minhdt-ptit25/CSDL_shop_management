@@ -30,6 +30,22 @@ function serialize(row) {
   };
 }
 
+function normalizeOrderItems(items) {
+  const map = new Map();
+  for (const item of Array.isArray(items) ? items : []) {
+    const ma_sku = String(item.ma_sku || "").trim();
+    const so_luong = Number(item.so_luong);
+    if (!ma_sku || !Number.isFinite(so_luong) || so_luong <= 0) continue;
+    const existing = map.get(ma_sku);
+    if (!existing) {
+      map.set(ma_sku, { ma_sku, so_luong: Number(so_luong) });
+    } else {
+      existing.so_luong += Number(so_luong);
+    }
+  }
+  return [...map.values()];
+}
+
 // GET /orders/:ma_hd
 router.get("/:ma_hd", async (req, res, next) => {
   try {
@@ -50,12 +66,14 @@ router.get("/", async (req, res, next) => {
   try {
     const skip = Number(req.query.skip || 0);
     const take = Number(req.query.limit || 100);
+    const totalCount = await prisma.hoaDon.count();
     const rows = await prisma.hoaDon.findMany({
       skip,
       take,
       orderBy: { ma_hd: "desc" },
       include: { chitiet: true },
     });
+    res.set("X-Total-Count", String(totalCount));
     res.json(rows.map(serialize));
   } catch (err) {
     next(err);
@@ -66,9 +84,9 @@ router.get("/", async (req, res, next) => {
 router.post("/", checkRole("admin", "cashier"), async (req, res, next) => {
   try {
     const data = req.body || {};
-    const items = Array.isArray(data.items) ? data.items : [];
+    const items = normalizeOrderItems(data.items);
     if (items.length === 0) {
-      return res.status(400).json({ detail: "Đơn hàng phải có ít nhất một sản phẩm" });
+      return res.status(400).json({ detail: "Đơn hàng phải có ít nhất một sản phẩm với số lượng hợp lệ" });
     }
 
     const ma_hd = String(data.ma_hd || `HD-${Date.now()}`);

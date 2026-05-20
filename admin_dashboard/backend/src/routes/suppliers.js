@@ -32,7 +32,9 @@ router.get("/", async (req, res, next) => {
   try {
     const skip = Number(req.query.skip  || 0);
     const take = Number(req.query.limit || 100);
+    const totalCount = await prisma.nhaCungCap.count();
     const rows = await prisma.nhaCungCap.findMany({ skip, take, orderBy: { ma_ncc: "asc" } });
+    res.set("X-Total-Count", String(totalCount));
     res.json(rows.map(serialize));
   } catch (err) {
     next(err);

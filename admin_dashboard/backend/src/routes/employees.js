@@ -109,7 +109,9 @@ router.get("/", checkRole("admin"), async (req, res, next) => {
   try {
     const skip = Number(req.query.skip  || 0);
     const take = Number(req.query.limit || 100);
+    const totalCount = await prisma.nhanVien.count();
     const rows = await prisma.nhanVien.findMany({ skip, take, orderBy: { ma_nv: "asc" } });
+    res.set("X-Total-Count", String(totalCount));
     res.json(rows.map(serialize));
   } catch (err) {
     next(err);

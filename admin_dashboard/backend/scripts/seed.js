@@ -31,8 +31,9 @@ async function main() {
     // 2. HangThanhVien
     `INSERT INTO hang_thanh_vien (ten_hang, diem_toithieu, phan_tram_uudai) VALUES
     ('Vô hạng', 0, 0),
-    ('Đồng', 100, 2),
-    ('Bạc', 500, 5),
+    ('Sắt', 50, 2),
+    ('Đồng', 100, 5),
+    ('Bạc', 500, 7),
     ('Vàng', 2000, 10);`,
 
     // 3. CuaHang
@@ -110,13 +111,13 @@ async function main() {
     // 7. KhachHang
     `INSERT INTO khachhang (ma_kh, ho_ten_kh, dia_chi, sdt, email, diem_tich_luy, ten_hang) VALUES
     ('KH01', 'Nguyễn Văn A', '10 Lê Lợi, Q1, TP.HCM', '0981000001', 'a.nv@gmail.com', 1200, 'Bạc'),
-    ('KH02', 'Trần Thị B', '20 Nguyễn Huệ, Q1, TP.HCM', '0981000002', 'b.tt@gmail.com', 80, 'Vô hạng'),
+    ('KH02', 'Trần Thị B', '20 Nguyễn Huệ, Q1, TP.HCM', '0981000002', 'b.tt@gmail.com', 80, 'Sắt'),
     ('KH03', 'Lê Văn C', '30 Phạm Ngũ Lão, Q1, TP.HCM', '0981000003', 'c.lv@gmail.com', 550, 'Bạc'),
     ('KH04', 'Phạm Thị D', '40 Võ Thị Sáu, Q3, TP.HCM', '0981000004', 'd.pt@gmail.com', 20, 'Vô hạng'),
     ('KH05', 'Hoàng Văn E', '50 Bà Huyện Thanh Quan, Q3', '0981000005', 'e.hv@gmail.com', 6000, 'Vàng'),
     ('KH06', 'Ngô Thị F', '60 Trần Hưng Đạo, Q5, TP.HCM', '0981000006', 'f.nt@gmail.com', 150, 'Đồng'),
     ('KH07', 'Đặng Văn G', '70 Nguyễn Trãi, Q5, TP.HCM', '0981000007', 'g.dv@gmail.com', 2100, 'Vàng'),
-    ('KH08', 'Bùi Thị H', '80 Xô Viết Nghệ Tĩnh, Bình Thạnh', '0981000008', 'h.bt@gmail.com', 90, 'Vô hạng'),
+    ('KH08', 'Bùi Thị H', '80 Xô Viết Nghệ Tĩnh, Bình Thạnh', '0981000008', 'h.bt@gmail.com', 90, 'Sắt'),
     ('KH09', 'Đỗ Văn I', '90 Ung Văn Khiêm, Bình Thạnh', '0981000009', 'i.dv@gmail.com', 510, 'Bạc'),
     ('KH10', 'Vũ Thị K', '100 Nguyễn Thái Học, Q1', '0981000010', 'k.vt@gmail.com', 10, 'Vô hạng'),
     ('KH11', 'Trương Văn L', '110 Lê Quang Định, Gò Vấp', '0981000011', 'l.tv@gmail.com', 3000, 'Vàng'),

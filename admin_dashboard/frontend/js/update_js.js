@@ -88,7 +88,7 @@ async function openEditCustomerModal(ma_kh) {
         document.getElementById('c-sdt').value = c.sdt || '';
         document.getElementById('c-email').value = c.email || '';
         document.getElementById('c-diem').value = c.diem_tich_luy || 0;
-        document.getElementById('c-hang').value = c.hang_thanh_vien || 'Bronze';
+        document.getElementById('c-hang').value = c.ten_hang || 'Vô hạng';
         
         openModal('modal-customer');
     } catch(e) {
@@ -108,7 +108,7 @@ async function submitCustomerForm() {
         sdt: document.getElementById('c-sdt').value.trim(),
         email: document.getElementById('c-email').value.trim(),
         diem_tich_luy: parseInt(document.getElementById('c-diem').value) || 0,
-        hang_thanh_vien: document.getElementById('c-hang').value
+        ten_hang: document.getElementById('c-hang').value
     };
 
     const method = isEdit ? 'PUT' : 'POST';
