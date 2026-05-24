@@ -226,7 +226,7 @@ router.get('/report/sales-monthly', async (_req, res, next) => {
   try {
     const rows = await prisma.$queryRaw`
       SELECT
-        strftime('%Y-%m', ngay_tao) AS month,
+        DATE_FORMAT(ngay_tao, '%Y-%m') AS month,
         SUM(tong_tien) AS revenue
       FROM hoadon
       GROUP BY month
@@ -249,7 +249,7 @@ router.get('/report/sales-yearly', async (_req, res, next) => {
   try {
     const rows = await prisma.$queryRaw`
       SELECT
-        strftime('%Y', ngay_tao) AS year,
+        DATE_FORMAT(ngay_tao, '%Y') AS year,
         SUM(tong_tien) AS revenue
       FROM hoadon
       GROUP BY year
@@ -294,10 +294,7 @@ router.get("/report/purchase-monthly", async (_req, res, next) => {
   try {
     const rows = await prisma.$queryRaw`
       SELECT
-        CASE
-          WHEN typeof(ngay_nhap) = 'integer' THEN strftime('%Y-%m', datetime(ngay_nhap / 1000, 'unixepoch'))
-          ELSE strftime('%Y-%m', ngay_nhap)
-        END AS month,
+        DATE_FORMAT(ngay_nhap, '%Y-%m') AS month,
         SUM(tong_tien) AS cost
       FROM phieunhap
       GROUP BY month
