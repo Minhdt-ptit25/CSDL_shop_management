@@ -1,0 +1,11 @@
+services:
+  backend:
+    build: ./backend
+    container_name: shop_backend
+    restart: always
+    ports:
+      - "8000:8000"
+    environment:
+      DATABASE_URL: "mysql://root:123456@host.docker.internal:3306/csdl_shop?schema=public"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
