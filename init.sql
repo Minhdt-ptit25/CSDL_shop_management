@@ -1,6 +1,6 @@
 -- Tạo database
-CREATE DATABASE IF NOT EXISTS csdl_shop;
-USE csdl_shop;
+CREATE DATABASE IF NOT EXISTS shop_management;
+USE shop_management;
 
 
 CREATE TABLE IF NOT EXISTS vitri (
@@ -123,7 +123,7 @@ CREATE TABLE IF NOT EXISTS chitiethoadon (
     FOREIGN KEY (ma_sku) REFERENCES bienthesku(ma_sku)
 );
 
-INSERT OR IGNORE INTO vitri (ma_vi_tri, ten_chuc_vu, luong) VALUES
+INSERT INTO vitri (ma_vi_tri, ten_chuc_vu, luong) VALUES
 ('VT01', 'Nhân viên bán hàng 1', 13000000),
 ('VT02', 'Thu ngân 2', 15000000),
 ('VT03', 'Nhân viên bán hàng 3', 28000000),
@@ -139,7 +139,7 @@ INSERT OR IGNORE INTO vitri (ma_vi_tri, ten_chuc_vu, luong) VALUES
 ('VT13', 'Nhân viên bán hàng 13', 22000000),
 ('VT14', 'Nhân viên kho 14', 9000000),
 ('VT15', 'Bảo vệ 15', 13000000);
-INSERT OR IGNORE INTO cuahang (ma_ch, ten_ch, dia_chi, sdt, email) VALUES
+INSERT INTO cuahang (ma_ch, ten_ch, dia_chi, sdt, email) VALUES
 ('CH01', 'Cửa hàng 1', 'Địa chỉ 1, TP.HCM', '0910000001', 'ch1@shop.com'),
 ('CH02', 'Cửa hàng 2', 'Địa chỉ 2, TP.HCM', '0910000002', 'ch2@shop.com'),
 ('CH03', 'Cửa hàng 3', 'Địa chỉ 3, TP.HCM', '0910000003', 'ch3@shop.com'),
@@ -155,7 +155,7 @@ INSERT OR IGNORE INTO cuahang (ma_ch, ten_ch, dia_chi, sdt, email) VALUES
 ('CH13', 'Cửa hàng 13', 'Địa chỉ 13, TP.HCM', '0910000013', 'ch13@shop.com'),
 ('CH14', 'Cửa hàng 14', 'Địa chỉ 14, TP.HCM', '0910000014', 'ch14@shop.com'),
 ('CH15', 'Cửa hàng 15', 'Địa chỉ 15, TP.HCM', '0910000015', 'ch15@shop.com');
-INSERT OR IGNORE INTO khachhang (ma_kh, ho_ten_kh, dia_chi, sdt, email, diem_tich_luy, hang_thanh_vien) VALUES
+INSERT INTO khachhang (ma_kh, ho_ten_kh, dia_chi, sdt, email, diem_tich_luy, hang_thanh_vien) VALUES
 ('KH01', 'Khách hàng 1', 'Địa chỉ KH 1, TP.HCM', '0920000001', 'kh1@gmail.com', 724, 'Thành viên Kim Cương'),
 ('KH02', 'Khách hàng 2', 'Địa chỉ KH 2, TP.HCM', '0920000002', 'kh2@gmail.com', 291, 'Thành viên Kim Cương'),
 ('KH03', 'Khách hàng 3', 'Địa chỉ KH 3, TP.HCM', '0920000003', 'kh3@gmail.com', 528, 'Thành viên mới'),
@@ -171,7 +171,7 @@ INSERT OR IGNORE INTO khachhang (ma_kh, ho_ten_kh, dia_chi, sdt, email, diem_tic
 ('KH13', 'Khách hàng 13', 'Địa chỉ KH 13, TP.HCM', '0920000013', 'kh13@gmail.com', 913, 'Thành viên Bạc'),
 ('KH14', 'Khách hàng 14', 'Địa chỉ KH 14, TP.HCM', '0920000014', 'kh14@gmail.com', 74, 'Thành viên mới'),
 ('KH15', 'Khách hàng 15', 'Địa chỉ KH 15, TP.HCM', '0920000015', 'kh15@gmail.com', 383, 'Thành viên Kim Cương');
-INSERT OR IGNORE INTO nhacungcap (ma_ncc, ten_ncc, dia_chi, sdt, email) VALUES
+INSERT INTO nhacungcap (ma_ncc, ten_ncc, dia_chi, sdt, email) VALUES
 ('NCC01', 'Nhà cung cấp 1', 'KCN 1, Bình Dương', '0930000001', 'ncc1@company.com'),
 ('NCC02', 'Nhà cung cấp 2', 'KCN 2, Bình Dương', '0930000002', 'ncc2@company.com'),
 ('NCC03', 'Nhà cung cấp 3', 'KCN 3, Bình Dương', '0930000003', 'ncc3@company.com'),
@@ -187,7 +187,7 @@ INSERT OR IGNORE INTO nhacungcap (ma_ncc, ten_ncc, dia_chi, sdt, email) VALUES
 ('NCC13', 'Nhà cung cấp 13', 'KCN 13, Bình Dương', '0930000013', 'ncc13@company.com'),
 ('NCC14', 'Nhà cung cấp 14', 'KCN 14, Bình Dương', '0930000014', 'ncc14@company.com'),
 ('NCC15', 'Nhà cung cấp 15', 'KCN 15, Bình Dương', '0930000015', 'ncc15@company.com');
-INSERT OR IGNORE INTO nhanvien (ma_nv, ho_ten_nv, ngay_sinh, gioi_tinh, dia_chi, sdt, email, ngay_vao_lam, ma_vi_tri, ma_ch) VALUES
+INSERT INTO nhanvien (ma_nv, ho_ten_nv, ngay_sinh, gioi_tinh, dia_chi, sdt, email, ngay_vao_lam, ma_vi_tri, ma_ch) VALUES
 ('NV01', 'Nhân viên 1', '1999-12-13', 'Nam', 'Nhà số 1, Hà Nội', '0940000001', 'nv1@shop.com', '2023-02-05', 'VT15', 'CH05'),
 ('NV02', 'Nhân viên 2', '2000-02-21', 'Nữ', 'Nhà số 2, Hà Nội', '0940000002', 'nv2@shop.com', '2023-08-08', 'VT09', 'CH06'),
 ('NV03', 'Nhân viên 3', '1992-10-14', 'Nam', 'Nhà số 3, Hà Nội', '0940000003', 'nv3@shop.com', '2021-08-22', 'VT13', 'CH15'),
@@ -203,7 +203,7 @@ INSERT OR IGNORE INTO nhanvien (ma_nv, ho_ten_nv, ngay_sinh, gioi_tinh, dia_chi,
 ('NV13', 'Nhân viên 13', '1991-07-21', 'Nam', 'Nhà số 13, Hà Nội', '0940000013', 'nv13@shop.com', '2023-01-19', 'VT07', 'CH02'),
 ('NV14', 'Nhân viên 14', '1992-10-01', 'Nữ', 'Nhà số 14, Hà Nội', '0940000014', 'nv14@shop.com', '2020-03-09', 'VT01', 'CH05'),
 ('NV15', 'Nhân viên 15', '1995-03-16', 'Nữ', 'Nhà số 15, Hà Nội', '0940000015', 'nv15@shop.com', '2021-05-19', 'VT12', 'CH05');
-INSERT OR IGNORE INTO sanpham (ma_sp, ten_sp, danh_muc, chat_lieu, mua_vu, gioi_tinh, ma_ncc) VALUES
+INSERT INTO sanpham (ma_sp, ten_sp, danh_muc, chat_lieu, mua_vu, gioi_tinh, ma_ncc) VALUES
 ('SP001', 'Sản phẩm thời trang 1', 'Áo thun', 'Len', 'Quanh năm', 'Nam', 'NCC12'),
 ('SP002', 'Sản phẩm thời trang 2', 'Giày', 'Da', 'Xuân Hè', 'Nữ', 'NCC09'),
 ('SP003', 'Sản phẩm thời trang 3', 'Giày', 'Polyester', 'Xuân Hè', 'Nữ', 'NCC11'),
@@ -219,7 +219,7 @@ INSERT OR IGNORE INTO sanpham (ma_sp, ten_sp, danh_muc, chat_lieu, mua_vu, gioi_
 ('SP013', 'Sản phẩm thời trang 13', 'Áo thun', 'Lụa', 'Xuân Hè', 'Nữ', 'NCC09'),
 ('SP014', 'Sản phẩm thời trang 14', 'Áo thun', 'Polyester', 'Quanh năm', 'Unisex', 'NCC10'),
 ('SP015', 'Sản phẩm thời trang 15', 'Giày', 'Cotton', 'Quanh năm', 'Unisex', 'NCC09');
-INSERT OR IGNORE INTO bienthesku (ma_sku, ma_sp, mau_sac, kich_co, gia_ban, so_luong_ton) VALUES
+INSERT INTO bienthesku (ma_sku, ma_sp, mau_sac, kich_co, gia_ban, so_luong_ton) VALUES
 ('SKU-SP001-Trắng-XL', 'SP001', 'Trắng', 'XL', 570000, 36),
 ('SKU-SP002-Đỏ-XL', 'SP002', 'Đỏ', 'XL', 680000, 41),
 ('SKU-SP003-Đỏ-M', 'SP003', 'Xanh dương', 'XL', 410000, 70),
@@ -235,7 +235,7 @@ INSERT OR IGNORE INTO bienthesku (ma_sku, ma_sp, mau_sac, kich_co, gia_ban, so_l
 ('SKU-SP013-Trắng-S', 'SP013', 'Đỏ', 'M', 810000, 96),
 ('SKU-SP014-Vàng-M', 'SP014', 'Đen', 'Freesize', 860000, 30),
 ('SKU-SP015-Đỏ-M', 'SP015', 'Đỏ', 'L', 430000, 63);
-INSERT OR IGNORE INTO phieunhap (ma_pn, ngay_nhap, tong_tien, ma_ncc, ma_nv) VALUES
+INSERT INTO phieunhap (ma_pn, ngay_nhap, tong_tien, ma_ncc, ma_nv) VALUES
 ('PN001', '2023-04-24', 3750000, 'NCC06', 'NV11'),
 ('PN002', '2023-06-28', 4480000, 'NCC14', 'NV09'),
 ('PN003', '2023-06-20', 3000000, 'NCC08', 'NV01'),
@@ -251,7 +251,7 @@ INSERT OR IGNORE INTO phieunhap (ma_pn, ngay_nhap, tong_tien, ma_ncc, ma_nv) VAL
 ('PN013', '2023-04-28', 4840000, 'NCC01', 'NV09'),
 ('PN014', '2023-10-24', 12600000, 'NCC04', 'NV14'),
 ('PN015', '2023-11-24', 6270000, 'NCC07', 'NV04');
-INSERT OR IGNORE INTO chitietphieunhap (ma_pn, ma_sku, so_luong, gia_nhap) VALUES
+INSERT INTO chitietphieunhap (ma_pn, ma_sku, so_luong, gia_nhap) VALUES
 ('PN001', 'SKU-SP001-Trắng-XL', 15, 250000),
 ('PN002', 'SKU-SP002-Đỏ-XL', 14, 320000),
 ('PN003', 'SKU-SP003-Đỏ-M', 50, 60000),
@@ -267,7 +267,7 @@ INSERT OR IGNORE INTO chitietphieunhap (ma_pn, ma_sku, so_luong, gia_nhap) VALUE
 ('PN013', 'SKU-SP013-Trắng-S', 11, 440000),
 ('PN014', 'SKU-SP014-Vàng-M', 36, 350000),
 ('PN015', 'SKU-SP015-Đỏ-M', 19, 330000);
-INSERT OR IGNORE INTO hoadon (ma_hd, ngay_tao, tong_tien, phuong_thuc_thanh_toan, trang_thai, ma_kh, ma_nv) VALUES
+INSERT INTO hoadon (ma_hd, ngay_tao, tong_tien, phuong_thuc_thanh_toan, trang_thai, ma_kh, ma_nv) VALUES
 ('HD001', '2023-01-09', 570000, 'Tiền mặt', 'Đã hủy', 'KH01', 'NV08'),
 ('HD002', '2023-04-17', 2720000, 'Thẻ tín dụng', 'Đã hủy', 'KH08', 'NV02'),
 ('HD003', '2023-01-02', 1640000, 'Chuyển khoản', 'Hoàn thành', 'KH01', 'NV13'),
@@ -283,7 +283,7 @@ INSERT OR IGNORE INTO hoadon (ma_hd, ngay_tao, tong_tien, phuong_thuc_thanh_toan
 ('HD013', '2023-10-28', 1620000, 'Ví điện tử', 'Đang xử lý', 'KH06', 'NV07'),
 ('HD014', '2023-10-27', 860000, 'Ví điện tử', 'Đã hủy', 'KH09', 'NV15'),
 ('HD015', '2023-09-26', 1290000, 'Ví điện tử', 'Đang xử lý', 'KH05', 'NV11');
-INSERT OR IGNORE INTO chitiethoadon (ma_hd, ma_sku, so_luong, gia_ban) VALUES
+INSERT INTO chitiethoadon (ma_hd, ma_sku, so_luong, gia_ban) VALUES
 ('HD001', 'SKU-SP001-Trắng-XL', 1, 570000),
 ('HD002', 'SKU-SP002-Đỏ-XL', 4, 680000),
 ('HD003', 'SKU-SP003-Đỏ-M', 4, 410000),
