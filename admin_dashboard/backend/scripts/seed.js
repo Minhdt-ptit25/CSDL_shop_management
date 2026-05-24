@@ -194,7 +194,8 @@ async function main() {
     ('HD03', 'SKU09', 1, 220000, 220000);`
   ];
 
-  for (const sql of sqlStatements) {
+  for (let sql of sqlStatements) {
+    sql = sql.replace(/(\d{4}-\d{2}-\d{2})T(\d{2}:\d{2}:\d{2})Z/g, '$1 $2');
     try {
       await prisma.$executeRawUnsafe(sql);
       console.log("Executed statement successfully.");

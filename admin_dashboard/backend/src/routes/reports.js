@@ -7,16 +7,19 @@ const router = Router();
 router.get("/category-sales", async (_req, res, next) => {
   try {
     const rows = await prisma.$queryRaw`
-      SELECT DATE_FORMAT(ngay_tao, '%Y-%m') AS month,
-            SUM(tong_tien_sau_giam) AS revenue
-      FROM hoadon
-      GROUP BY month
-      ORDER BY month
+      SELECT sp.danh_muc AS category,
+             SUM(ct.so_luong) AS quantity,
+             SUM(ct.so_luong * ct.gia_ban) AS revenue
+      FROM chitiethoadon ct
+      JOIN bienthesku sku ON ct.ma_sku = sku.ma_sku
+      JOIN sanpham sp ON sku.ma_sp = sp.ma_sp
+      GROUP BY sp.danh_muc
+      ORDER BY revenue DESC
     `;
 
     res.json(
       (Array.isArray(rows) ? rows : []).map((r) => ({
-        category: r.category,
+        category: r.category || 'Khác',
         quantity: Number(r.quantity || 0),
         revenue:  Number(r.revenue  || 0),
       }))
@@ -31,7 +34,7 @@ router.get("/sales-monthly", async (_req, res, next) => {
   try {
     const rows = await prisma.$queryRaw`
       SELECT
-        strftime('%Y-%m', ngay_tao) AS month,
+        DATE_FORMAT(ngay_tao, '%Y-%m') AS month,
         SUM(tong_tien_sau_giam) AS revenue
       FROM hoadon
       GROUP BY month

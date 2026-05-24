@@ -9,44 +9,46 @@ datasource db {
 }
 
 model ViTri {
-  ma_vi_tri   String     @id @db.VarChar(10)
-  ten_chuc_vu String     @db.VarChar(50)
-  luong       Decimal    @db.Decimal(12, 2)
+  ma_vi_tri   String     @id
+  ten_chuc_vu String
+  luong       Decimal
   nhanviens   NhanVien[]
 
   @@map("vitri")
 }
 
 model CuaHang {
-  ma_ch     String     @id @db.VarChar(10)
-  ten_ch    String     @db.VarChar(100)
-  dia_chi   String     @db.VarChar(200)
-  sdt       String     @unique(map: "sdt") @db.VarChar(15)
-  email     String     @unique(map: "email") @db.VarChar(100)
+  ma_ch     String     @id
+  ten_ch    String
+  dia_chi   String
+  sdt       String     @unique
+  email     String     @unique
   nhanviens NhanVien[]
 
   @@map("cuahang")
 }
 
 model KhachHang {
-  ma_kh           String   @id @db.VarChar(20)
-  ho_ten_kh       String   @db.VarChar(100)
-  dia_chi         String   @db.VarChar(200)
-  sdt             String   @unique(map: "sdt") @db.VarChar(15)
-  email           String   @unique(map: "email") @db.VarChar(100)
-  diem_tich_luy   Int?     @default(0)
-  hang_thanh_vien String?  @default("Thành viên mới") @db.VarChar(50)
+  ma_kh           String          @id
+  ho_ten_kh       String
+  dia_chi         String?
+  sdt             String          @unique
+  email           String?
+  diem_tich_luy   Int             @default(0)
+  ten_hang        String          @default("Đồng")
   hoadons         HoaDon[]
+  hang_thanh_vien hang_thanh_vien @relation(fields: [ten_hang], references: [ten_hang])
 
+  @@index([ten_hang], map: "khachhang_ten_hang_fkey")
   @@map("khachhang")
 }
 
 model NhaCungCap {
-  ma_ncc     String      @id @db.VarChar(10)
-  ten_ncc    String      @db.VarChar(100)
-  dia_chi    String      @db.VarChar(200)
-  sdt        String      @unique(map: "sdt") @db.VarChar(15)
-  email      String      @unique(map: "email") @db.VarChar(100)
+  ma_ncc     String      @id
+  ten_ncc    String
+  dia_chi    String
+  sdt        String      @unique
+  email      String      @unique
   phieunhaps PhieuNhap[]
   sanphams   SanPham[]
 
@@ -54,110 +56,189 @@ model NhaCungCap {
 }
 
 model NhanVien {
-  ma_nv        String      @id @db.VarChar(10)
-  ho_ten_nv    String      @db.VarChar(100)
-  ngay_sinh    DateTime    @db.Date
-  gioi_tinh    String      @db.VarChar(10)
-  dia_chi      String      @db.VarChar(200)
-  sdt          String      @unique(map: "sdt") @db.VarChar(15)
-  email        String      @unique(map: "email") @db.VarChar(100)
-  ngay_vao_lam DateTime    @db.Date
-  ma_vi_tri    String      @db.VarChar(10)
-  ma_ch        String      @db.VarChar(10)
-  hoadons      HoaDon[]
-  vitri        ViTri       @relation(fields: [ma_vi_tri], references: [ma_vi_tri], onDelete: NoAction, onUpdate: NoAction, map: "nhanvien_ibfk_1")
-  cuahang      CuaHang     @relation(fields: [ma_ch], references: [ma_ch], onDelete: NoAction, onUpdate: NoAction, map: "nhanvien_ibfk_2")
-  phieunhaps   PhieuNhap[]
+  ma_nv                    String                     @id
+  ho_ten_nv                String
+  ngay_sinh                DateTime
+  gioi_tinh                String
+  dia_chi                  String
+  sdt                      String                     @unique
+  email                    String                     @unique
+  ngay_vao_lam             DateTime
+  ma_vi_tri                String
+  ma_ch                    String
+  ten_dang_nhap            String                     @unique
+  mat_khau_hash            String
+  vai_tro                  String
+  cart_item_delete_request cart_item_delete_request[]
+  delete_request           delete_request[]
+  hoadons                  HoaDon[]
+  cuahang                  CuaHang                    @relation(fields: [ma_ch], references: [ma_ch], map: "nhanvien_ibfk_2")
+  vitri                    ViTri                      @relation(fields: [ma_vi_tri], references: [ma_vi_tri], map: "nhanvien_ibfk_1")
+  phieunhaps               PhieuNhap[]
+  product_delete_request   product_delete_request[]
 
-  @@index([ma_ch], map: "ma_ch")
-  @@index([ma_vi_tri], map: "ma_vi_tri")
+  @@index([ma_ch], map: "nhanvien_ma_ch_fkey")
+  @@index([ma_vi_tri], map: "nhanvien_ma_vi_tri_fkey")
   @@map("nhanvien")
 }
 
 model SanPham {
-  ma_sp      String       @id @db.VarChar(10)
-  ten_sp     String       @db.VarChar(100)
-  danh_muc   String       @db.VarChar(50)
-  chat_lieu  String       @db.VarChar(100)
-  mua_vu     String       @db.VarChar(50)
-  gioi_tinh  String       @db.VarChar(10)
-  ma_ncc     String       @db.VarChar(10)
-  bienthes   BienTheSKU[]
-  nhacungcap NhaCungCap   @relation(fields: [ma_ncc], references: [ma_ncc], onDelete: NoAction, onUpdate: NoAction, map: "sanpham_ibfk_1")
+  ma_sp                  String                   @id
+  ten_sp                 String
+  danh_muc               String
+  chat_lieu              String
+  gioi_tinh              String
+  ma_ncc                 String
+  bienthes               BienTheSKU[]
+  product_delete_request product_delete_request[]
+  nhacungcap             NhaCungCap               @relation(fields: [ma_ncc], references: [ma_ncc], map: "sanpham_ibfk_1")
 
-  @@index([ma_ncc], map: "ma_ncc")
+  @@index([ma_ncc], map: "sanpham_ma_ncc_fkey")
   @@map("sanpham")
 }
 
 model BienTheSKU {
-  ma_sku            String             @id @db.VarChar(30)
-  ma_sp             String             @db.VarChar(10)
-  mau_sac           String             @db.VarChar(50)
-  kich_co           String             @db.VarChar(20)
-  gia_ban           Decimal            @db.Decimal(15, 2)
+  ma_sku            String             @id
+  ma_sp             String
+  mau_sac           String
+  kich_co           String
+  gia_ban           Decimal
   so_luong_ton      Int                @default(0)
-  sanpham           SanPham            @relation(fields: [ma_sp], references: [ma_sp], onDelete: NoAction, onUpdate: NoAction, map: "bienthesku_ibfk_1")
+  sanpham           SanPham            @relation(fields: [ma_sp], references: [ma_sp], map: "bienthesku_ibfk_1")
   chitietHoaDons    ChiTietHoaDon[]
   chitietPhieuNhaps ChiTietPhieuNhap[]
 
-  @@index([ma_sp], map: "ma_sp")
+  @@index([ma_sp], map: "bienthesku_ma_sp_fkey")
   @@map("bienthesku")
 }
 
 model PhieuNhap {
-  ma_pn      String             @id @db.VarChar(10)
-  ngay_nhap  DateTime           @db.Date
-  tong_tien  Decimal            @db.Decimal(15, 2)
-  ma_ncc     String             @db.VarChar(10)
-  ma_nv      String             @db.VarChar(10)
+  ma_pn      String             @id
+  ngay_nhap  DateTime
+  tong_tien  Decimal
+  ma_ncc     String
+  ma_nv      String
   chitiet    ChiTietPhieuNhap[]
-  nhacungcap NhaCungCap         @relation(fields: [ma_ncc], references: [ma_ncc], onDelete: NoAction, onUpdate: NoAction, map: "phieunhap_ibfk_1")
-  nhanvien   NhanVien           @relation(fields: [ma_nv], references: [ma_nv], onDelete: NoAction, onUpdate: NoAction, map: "phieunhap_ibfk_2")
+  nhacungcap NhaCungCap         @relation(fields: [ma_ncc], references: [ma_ncc], map: "phieunhap_ibfk_1")
+  nhanvien   NhanVien           @relation(fields: [ma_nv], references: [ma_nv], map: "phieunhap_ibfk_2")
 
-  @@index([ma_ncc], map: "ma_ncc")
-  @@index([ma_nv], map: "ma_nv")
+  @@index([ma_ncc], map: "phieunhap_ma_ncc_fkey")
+  @@index([ma_nv], map: "phieunhap_ma_nv_fkey")
   @@map("phieunhap")
 }
 
 model HoaDon {
-  ma_hd                  String          @id @db.VarChar(10)
-  ngay_tao               DateTime        @db.Date
-  tong_tien              Decimal         @db.Decimal(15, 2)
-  phuong_thuc_thanh_toan String          @db.VarChar(50)
-  trang_thai             String          @db.VarChar(20)
-  ma_kh                  String          @db.VarChar(20)
-  ma_nv                  String          @db.VarChar(10)
+  ma_hd                  String           @id
+  ngay_tao               DateTime
+  tong_tien_truoc_giam   Decimal
+  giam_gia_hang          Decimal          @default(0.000000000000000000000000000000)
+  giam_gia_voucher       Decimal          @default(0.000000000000000000000000000000)
+  tong_tien_sau_giam     Decimal
+  phuong_thuc_thanh_toan String
+  trang_thai             String
+  ma_kh                  String
+  ma_nv                  String
+  ma_voucher             String?
   chitiet                ChiTietHoaDon[]
-  khachhang              KhachHang       @relation(fields: [ma_kh], references: [ma_kh], onDelete: NoAction, onUpdate: NoAction, map: "hoadon_ibfk_1")
-  nhanvien               NhanVien        @relation(fields: [ma_nv], references: [ma_nv], onDelete: NoAction, onUpdate: NoAction, map: "hoadon_ibfk_2")
+  delete_request         delete_request[]
+  khachhang              KhachHang        @relation(fields: [ma_kh], references: [ma_kh], map: "hoadon_ibfk_1")
+  nhanvien               NhanVien         @relation(fields: [ma_nv], references: [ma_nv], map: "hoadon_ibfk_2")
+  voucher                voucher?         @relation(fields: [ma_voucher], references: [ma_voucher])
 
-  @@index([ma_kh], map: "ma_kh")
-  @@index([ma_nv], map: "ma_nv")
+  @@index([ma_kh], map: "hoadon_ma_kh_fkey")
+  @@index([ma_nv], map: "hoadon_ma_nv_fkey")
+  @@index([ma_voucher], map: "hoadon_ma_voucher_fkey")
   @@map("hoadon")
 }
 
 model ChiTietHoaDon {
-  ma_hd    String     @db.VarChar(10)
-  ma_sku   String     @db.VarChar(30)
-  so_luong Int
-  gia_ban  Decimal    @db.Decimal(15, 2)
-  hoadon   HoaDon     @relation(fields: [ma_hd], references: [ma_hd], onDelete: NoAction, onUpdate: NoAction, map: "chitiethoadon_ibfk_1")
-  sku      BienTheSKU @relation(fields: [ma_sku], references: [ma_sku], onDelete: NoAction, onUpdate: NoAction, map: "chitiethoadon_ibfk_2")
+  ma_hd      String
+  ma_sku     String
+  so_luong   Int
+  gia_ban    Decimal
+  thanh_tien Decimal
+  hoadon     HoaDon     @relation(fields: [ma_hd], references: [ma_hd], map: "chitiethoadon_ibfk_1")
+  sku        BienTheSKU @relation(fields: [ma_sku], references: [ma_sku], map: "chitiethoadon_ibfk_2")
 
   @@id([ma_hd, ma_sku])
-  @@index([ma_sku], map: "ma_sku")
+  @@index([ma_sku], map: "chitiethoadon_ma_sku_fkey")
   @@map("chitiethoadon")
 }
 
 model ChiTietPhieuNhap {
-  ma_pn     String     @db.VarChar(10)
-  ma_sku    String     @db.VarChar(30)
+  ma_pn     String
+  ma_sku    String
   so_luong  Int
-  gia_nhap  Decimal    @db.Decimal(15, 2)
-  phieunhap PhieuNhap  @relation(fields: [ma_pn], references: [ma_pn], onDelete: NoAction, onUpdate: NoAction, map: "chitietphieunhap_ibfk_1")
-  sku       BienTheSKU @relation(fields: [ma_sku], references: [ma_sku], onDelete: NoAction, onUpdate: NoAction, map: "chitietphieunhap_ibfk_2")
+  gia_nhap  Decimal
+  phieunhap PhieuNhap  @relation(fields: [ma_pn], references: [ma_pn], map: "chitietphieunhap_ibfk_1")
+  sku       BienTheSKU @relation(fields: [ma_sku], references: [ma_sku], map: "chitietphieunhap_ibfk_2")
 
   @@id([ma_pn, ma_sku])
-  @@index([ma_sku], map: "ma_sku")
+  @@index([ma_sku], map: "chitietphieunhap_ma_sku_fkey")
   @@map("chitietphieunhap")
+}
+
+model cart_item_delete_request {
+  id            String    @id
+  ma_nv_cashier String
+  ma_sku        String
+  ly_do         String?
+  ngay_tao      DateTime  @default(now())
+  trang_thai    String    @default("pending")
+  ngay_xu_ly    DateTime?
+  nhanvien      NhanVien  @relation(fields: [ma_nv_cashier], references: [ma_nv])
+
+  @@index([ma_nv_cashier], map: "cart_item_delete_request_ma_nv_cashier_fkey")
+}
+
+model delete_request {
+  id            String    @id
+  ma_hd         String
+  ma_nv_cashier String
+  ly_do         String?
+  ngay_tao      DateTime  @default(now())
+  trang_thai    String    @default("pending")
+  ngay_xu_ly    DateTime?
+  ghi_chu       String?
+  hoadon        HoaDon    @relation(fields: [ma_hd], references: [ma_hd], onDelete: Cascade)
+  nhanvien      NhanVien  @relation(fields: [ma_nv_cashier], references: [ma_nv])
+
+  @@index([ma_hd], map: "delete_request_ma_hd_fkey")
+  @@index([ma_nv_cashier], map: "delete_request_ma_nv_cashier_fkey")
+}
+
+model hang_thanh_vien {
+  ten_hang        String      @id
+  diem_toithieu   Int         @default(0)
+  phan_tram_uudai Int         @default(0)
+  khachhang       KhachHang[]
+}
+
+model product_delete_request {
+  id              String    @id
+  ma_sp           String
+  ma_nv_warehouse String
+  ly_do           String?
+  ngay_tao        DateTime  @default(now())
+  trang_thai      String    @default("pending")
+  ngay_xu_ly      DateTime?
+  ghi_chu         String?
+  nhanvien        NhanVien  @relation(fields: [ma_nv_warehouse], references: [ma_nv])
+  sanpham         SanPham   @relation(fields: [ma_sp], references: [ma_sp], onDelete: Cascade)
+
+  @@index([ma_nv_warehouse], map: "product_delete_request_ma_nv_warehouse_fkey")
+  @@index([ma_sp], map: "product_delete_request_ma_sp_fkey")
+}
+
+model voucher {
+  ma_voucher           String   @id
+  mo_ta                String?
+  phan_tram_giam       Int      @default(0)
+  so_tien_giam_toida   Decimal  @default(0.000000000000000000000000000000)
+  gia_tri_don_toithieu Decimal  @default(0.000000000000000000000000000000)
+  ngay_bat_dau         DateTime
+  ngay_het_han         DateTime
+  so_luong_phat_hanh   Int      @default(0)
+  so_luong_da_dung     Int      @default(0)
+  hoadon               HoaDon[]
 }
