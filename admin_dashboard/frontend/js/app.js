@@ -322,7 +322,7 @@ async function fetchStats() {
             headers: { 'Authorization': `Bearer ${localStorage.getItem('adminToken')}` }
         });
         const stats = await response.json();
-        
+
         const elOrders = document.getElementById('stat-orders');
         const elRevenue = document.getElementById('stat-revenue');
         const elCustomers = document.getElementById('stat-customers');
@@ -344,13 +344,13 @@ async function fetchProducts() {
             headers: { 'Authorization': `Bearer ${localStorage.getItem('adminToken')}` }
         });
         const products = await response.json();
-        
+
         const dashboardBody = document.getElementById('products-table-body');
         const crudBody = document.getElementById('crud-products-body');
-        
+
         if (dashboardBody) dashboardBody.innerHTML = '';
         if (crudBody) crudBody.innerHTML = '';
-        
+
         if (products.length === 0) {
             const emptyMsg = `<tr><td colspan="5" class="text-center">Không tìm thấy sản phẩm.</td></tr>`;
             if (dashboardBody) dashboardBody.innerHTML = emptyMsg;
@@ -413,15 +413,13 @@ async function fetchCustomers() {
         if (!crudBody) return;
         crudBody.innerHTML = '';
         if (items.length === 0) return crudBody.innerHTML = `<tr><td colspan="8" class="text-center">Không có dữ liệu.</td></tr>`;
-        
+
         items.forEach(item => {
             const tr = document.createElement('tr');
             tr.innerHTML = `
                 <td class="text-center"><span class="badge-secondary border-0">${item.ma_kh}</span></td>
                 <td><div class="table-info-heading">${item.ho_ten_kh}</div></td>
-                <td>${item.dia_chi || ''}</td>
                 <td class="text-center">${item.sdt}</td>
-                <td>${item.email || ''}</td>
                 <td class="text-center">${item.diem_tich_luy}</td>
                 <td class="text-center"><span class="${getTierBadgeClass(item.ten_hang)}">${item.ten_hang}</span></td>
                 <td class="text-center">
@@ -434,7 +432,7 @@ async function fetchCustomers() {
             crudBody.appendChild(tr);
         });
         initSortable('crud-customers-body');
-    } catch (e) {}
+    } catch (e) { }
 }
 
 // Fetch Orders
@@ -448,7 +446,7 @@ async function fetchOrders() {
         if (!crudBody) return;
         crudBody.innerHTML = '';
         if (items.length === 0) return crudBody.innerHTML = `<tr><td colspan="7" class="text-center">Không có dữ liệu.</td></tr>`;
-        
+
         items.forEach(item => {
             const tr = document.createElement('tr');
             tr.innerHTML = `
@@ -469,7 +467,7 @@ async function fetchOrders() {
             crudBody.appendChild(tr);
         });
         initSortable('crud-orders-body');
-    } catch (e) {}
+    } catch (e) { }
 }
 
 // Fetch Employees
@@ -483,7 +481,7 @@ async function fetchEmployees() {
         if (!crudBody) return;
         crudBody.innerHTML = '';
         if (items.length === 0) return crudBody.innerHTML = `<tr><td colspan="6" class="text-center">Không có dữ liệu.</td></tr>`;
-        
+
         items.forEach(item => {
             const tr = document.createElement('tr');
             tr.innerHTML = `
@@ -503,7 +501,7 @@ async function fetchEmployees() {
             crudBody.appendChild(tr);
         });
         initSortable('crud-employees-body');
-    } catch (e) {}
+    } catch (e) { }
 }
 
 // Fetch Suppliers
@@ -517,7 +515,7 @@ async function fetchSuppliers() {
         if (!crudBody) return;
         crudBody.innerHTML = '';
         if (items.length === 0) return crudBody.innerHTML = `<tr><td colspan="5" class="text-center">Không có dữ liệu.</td></tr>`;
-        
+
         items.forEach(item => {
             const tr = document.createElement('tr');
             tr.innerHTML = `
@@ -545,13 +543,13 @@ async function fetchSuppliers() {
 async function fetchRequests() {
     try {
         const token = localStorage.getItem('adminToken');
-        
+
         // Fetch cart item delete requests
         const resCart = await fetch(`${API_BASE_URL}/orders/cart/delete-requests/list?trang_thai=pending`, {
             headers: { 'Authorization': `Bearer ${token}` }
         });
         const cartItems = resCart.ok ? await resCart.json() : [];
-        
+
         // Fetch order delete requests
         const resOrder = await fetch(`${API_BASE_URL}/orders/delete-requests/list?trang_thai=pending`, {
             headers: { 'Authorization': `Bearer ${token}` }
@@ -586,14 +584,14 @@ async function fetchRequests() {
         const crudBody = document.getElementById('crud-requests-body');
         if (!crudBody) return;
         crudBody.innerHTML = '';
-        
+
         if (allRequests.length === 0) {
             return crudBody.innerHTML = `<tr><td colspan="8" class="text-center">Không có yêu cầu chờ duyệt.</td></tr>`;
         }
-        
+
         allRequests.forEach(item => {
             const tr = document.createElement('tr');
-            
+
             let actionBtns = '';
             if (item.type === 'cart') {
                 actionBtns = `
@@ -703,18 +701,18 @@ async function rejectOrderRequest(ma_hd) {
 // SPA Routing Logic
 const viewFetchMap = {
     'dashboard': () => { fetchStats(); fetchDashboardCharts(); },
-    'products':  fetchProducts,
+    'products': fetchProducts,
     'customers': fetchCustomers,
-    'orders':    fetchOrders,
+    'orders': fetchOrders,
     'employees': fetchEmployees,
     'suppliers': fetchSuppliers,
-    'requests':  fetchRequests,
-    'imports':   fetchImports,
+    'requests': fetchRequests,
+    'imports': fetchImports,
 };
 
 function initRouting() {
     const navLinks = document.querySelectorAll('.nav-link[data-view]');
-    const views    = document.querySelectorAll('.app-view');
+    const views = document.querySelectorAll('.app-view');
 
     navLinks.forEach(link => {
         link.addEventListener('click', (e) => {
@@ -757,8 +755,8 @@ function checkAuthStatus() {
     const token = localStorage.getItem('adminToken');
     const isHomePage = window.location.pathname.endsWith('home.html');
 
-    if(token) {
-        if(isHomePage) {
+    if (token) {
+        if (isHomePage) {
             window.location.href = 'index.html';
             return;
         }
@@ -782,7 +780,7 @@ function checkAuthStatus() {
                 if (user.vai_tro === 'warehouse' && !['dashboard', 'products', 'suppliers', 'imports'].includes(view)) visible = false;
                 link.parentElement.style.display = visible ? 'block' : 'none';
             });
-            
+
             // Hiện menu Yêu cầu duyệt nếu là admin
             const menuReq = document.getElementById('menu-requests-admin');
             if (menuReq) menuReq.style.display = user.vai_tro === 'admin' ? 'block' : 'none';
@@ -794,8 +792,8 @@ function checkAuthStatus() {
 
         document.body.classList.remove('logged-out-layout');
         const overlay = document.getElementById('login-overlay');
-        if(overlay) overlay.classList.remove('active');
-        
+        if (overlay) overlay.classList.remove('active');
+
         const authSidebar = document.getElementById('sidebar-auth');
         if (authSidebar) authSidebar.style.display = 'flex';
         const unauthSidebar = document.getElementById('sidebar-unauth');
@@ -803,27 +801,27 @@ function checkAuthStatus() {
 
         if (!document.querySelector('.app-view.active')) {
             const dash = document.getElementById('view-dashboard');
-            if(dash) dash.classList.add('active');
+            if (dash) dash.classList.add('active');
         }
     } else {
-        if(!isHomePage) {
+        if (!isHomePage) {
             window.location.href = 'home.html';
             return;
         }
         document.body.classList.add('logged-out-layout');
         const overlay = document.getElementById('login-overlay');
-        if(overlay) overlay.classList.remove('active');
-        
+        if (overlay) overlay.classList.remove('active');
+
         const authSidebar = document.getElementById('sidebar-auth');
         if (authSidebar) authSidebar.style.display = 'none';
         const unauthSidebar = document.getElementById('sidebar-unauth');
         if (unauthSidebar) unauthSidebar.style.display = 'flex';
 
         const sidebar = document.querySelector('.app-sidebar');
-        if(sidebar) sidebar.style.display = 'none';
+        if (sidebar) sidebar.style.display = 'none';
 
         document.querySelectorAll('.app-view').forEach(v => v.classList.remove('active'));
-        if(document.getElementById('view-home')) document.getElementById('view-home').classList.add('active');
+        if (document.getElementById('view-home')) document.getElementById('view-home').classList.add('active');
     }
 }
 
@@ -839,8 +837,8 @@ async function attemptLogin() {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ username: user, password: pass })
         });
-        
-        if(resp.ok) {
+
+        if (resp.ok) {
             const data = await resp.json();
             localStorage.setItem('adminToken', data.access_token);
             checkAuthStatus();
@@ -852,7 +850,7 @@ async function attemptLogin() {
             errDiv.innerText = data.detail || 'Sai tài khoản hoặc mật khẩu!';
             errDiv.style.display = 'block';
         }
-    } catch(e) {
+    } catch (e) {
         errDiv.innerText = 'Lỗi kết nối server.';
         errDiv.style.display = 'block';
     }
@@ -865,7 +863,7 @@ function toggleSidebarUserMenu(e) {
     e.stopPropagation();
     const dropdown = e.currentTarget;
     const menu = document.getElementById('sidebar-user-menu');
-    
+
     dropdown.classList.toggle('active');
     menu.classList.toggle('active');
 }
@@ -890,15 +888,15 @@ function toggleAdminMenu() {
 // Đóng admin menu khi click ra ngoài
 document.addEventListener('click', (e) => {
     const group = document.getElementById('admin-dropdown-group');
-    const menu  = document.getElementById('admin-menu');
+    const menu = document.getElementById('admin-menu');
     if (menu && group && !group.contains(e.target)) {
         menu.style.display = 'none';
     }
 });
 
 function logout(e) {
-    if(e) e.stopPropagation();
-    
+    if (e) e.stopPropagation();
+
     // Close the menu
     const dropdown = document.querySelector('.sidebar-user-dropdown');
     const menu = document.getElementById('sidebar-user-menu');
@@ -906,7 +904,7 @@ function logout(e) {
         dropdown.classList.remove('active');
         menu.classList.remove('active');
     }
-    
+
     localStorage.removeItem('adminToken');
     checkAuthStatus();
     showToast('Đã đăng xuất tài khoản.', 'info');
@@ -921,18 +919,18 @@ function showToast(message, type = 'success') {
         toast.style.cssText = 'position: fixed; top: 80px; right: 20px; z-index: 9999; padding: 15px 25px; border-radius: 6px; box-shadow: 0 4px 15px rgba(0,0,0,0.2); display: flex; align-items: center; gap: 10px; font-weight: 500; transform: translateX(120%); transition: transform 0.4s cubic-bezier(0.18, 0.89, 0.32, 1.28); color: white;';
         document.body.appendChild(toast);
     }
-    
+
     let bgColor = '#28a745'; // success
     let icon = 'fa-check-circle';
     if (type === 'error') { bgColor = '#dc3545'; icon = 'fa-exclamation-circle'; }
     if (type === 'info') { bgColor = '#17a2b8'; icon = 'fa-info-circle'; }
-    
+
     toast.style.background = bgColor;
     toast.innerHTML = `<i class="fas ${icon} fa-lg"></i> <span style="font-size: 1.05rem;">${message}</span>`;
-    
+
     // Animate in
     setTimeout(() => { toast.style.transform = 'translateX(0)'; }, 50);
-    
+
     // Auto hide
     setTimeout(() => { toast.style.transform = 'translateX(120%)'; }, 3000);
 }
@@ -941,7 +939,7 @@ function showToast(message, type = 'success') {
 document.addEventListener('DOMContentLoaded', () => {
     checkAuthStatus();
     initRouting();
-    
+
     const token = localStorage.getItem('adminToken');
     const user = parseJwt(token);
 
@@ -966,13 +964,13 @@ document.addEventListener('DOMContentLoaded', () => {
             fetchImports();
         }
     }
-    
+
     // Auto-refresh dashboard every 5 seconds (stats + charts)
     setInterval(() => {
         fetchStats();
         fetchDashboardCharts();
     }, 5000);
-    
+
     // Update customer tier when points change
     const customerPointsInput = document.getElementById('c-diem');
     const customerTierInput = document.getElementById('c-hang');
@@ -997,14 +995,14 @@ function openModal(id) {
 function closeAllModals() {
     document.getElementById('modal-overlay').style.display = 'none';
     document.querySelectorAll('.modal-box').forEach(m => m.style.display = 'none');
-    
+
     pendingRemoveRow = null;
     const authUser = document.getElementById('admin-auth-username');
-    if(authUser) authUser.value = '';
+    if (authUser) authUser.value = '';
     const authPass = document.getElementById('admin-auth-password');
-    if(authPass) authPass.value = '';
+    if (authPass) authPass.value = '';
     const authErr = document.getElementById('admin-auth-error');
-    if(authErr) authErr.style.display = 'none';
+    if (authErr) authErr.style.display = 'none';
 }
 
 // ---- PRODUCT CRUD ----
@@ -1037,7 +1035,7 @@ async function openEditProductModal(ma_sp) {
             headers: { 'Authorization': `Bearer ${localStorage.getItem('adminToken')}` }
         });
         const p = await res.json();
-        if(!res.ok) return showToast(p.detail || 'Không tìm thấy SP', 'error');
+        if (!res.ok) return showToast(p.detail || 'Không tìm thấy SP', 'error');
 
         document.getElementById('p-is-edit').value = 'true';
         document.getElementById('modal-product-title').innerText = 'Sửa Sản phẩm: ' + ma_sp;
@@ -1054,7 +1052,7 @@ async function openEditProductModal(ma_sp) {
         (p.bienthes || []).forEach(sku => addSkuRow(sku));
 
         openModal('modal-product');
-    } catch(e) {
+    } catch (e) {
         showToast('Lỗi tải dữ liệu SP', 'error');
     }
 }
@@ -1062,7 +1060,7 @@ async function openEditProductModal(ma_sp) {
 async function submitProductForm() {
     const isEdit = document.getElementById('p-is-edit').value === 'true';
     const ma_sp = document.getElementById('p-ma_sp').value.trim();
-    if(!ma_sp) return showToast('Vui lòng nhập Mã SP', 'error');
+    if (!ma_sp) return showToast('Vui lòng nhập Mã SP', 'error');
 
     // Collect SKU rows
     const skuRows = document.querySelectorAll('#sku-rows-body tr');
@@ -1078,12 +1076,12 @@ async function submitProductForm() {
     }
 
     const payload = {
-        ma_sp:     ma_sp,
-        ten_sp:    document.getElementById('p-ten_sp').value.trim(),
-        danh_muc:  document.getElementById('p-danhmuc').value.trim() || 'Thời Trang',
+        ma_sp: ma_sp,
+        ten_sp: document.getElementById('p-ten_sp').value.trim(),
+        danh_muc: document.getElementById('p-danhmuc').value.trim() || 'Thời Trang',
         chat_lieu: document.getElementById('p-chatlieu').value.trim() || 'Cotton',
         gioi_tinh: document.getElementById('p-gioitinh').value.trim() || 'Unisex',
-        ma_ncc:    document.getElementById('p-ma_ncc').value.trim(),
+        ma_ncc: document.getElementById('p-ma_ncc').value.trim(),
         bienthes,
     };
 
@@ -1099,7 +1097,7 @@ async function submitProductForm() {
             },
             body: JSON.stringify(payload)
         });
-        if(res.ok) {
+        if (res.ok) {
             showToast(isEdit ? 'Đã cập nhật SP!' : 'Đã thêm SP mới!', 'success');
             closeAllModals();
             fetchStats();
@@ -1108,7 +1106,7 @@ async function submitProductForm() {
             const err = await res.json();
             showToast(err.detail || 'Có lỗi xảy ra', 'error');
         }
-    } catch(e) {
+    } catch (e) {
         showToast('Lỗi kết nối Server', 'error');
     }
 }
@@ -1118,7 +1116,7 @@ function openDeleteModal(id, type = 'product') {
     document.getElementById('delete-target-id').innerText = id;
     document.getElementById('delete-item-id').value = id;
     document.getElementById('delete-item-type').value = type;
-    
+
     const modalDelete = document.getElementById('modal-delete');
     if (type === 'order') {
         modalDelete.classList.add('shake-animation');
@@ -1158,20 +1156,20 @@ async function executeDeleteRequest(id, type, token) {
     try {
         const res = await fetch(url, {
             method: 'POST',
-            headers: { 
+            headers: {
                 'Authorization': `Bearer ${token}`,
                 'Content-Type': 'application/json'
             },
             body: JSON.stringify({ ly_do: "Yêu cầu từ nhân viên" })
         });
-        if(res.ok) {
+        if (res.ok) {
             showToast('Đã gửi yêu cầu xóa tới Admin!', 'success');
             closeAllModals();
         } else {
             const err = await res.json();
             showToast(err.detail || 'Gửi yêu cầu xóa thất bại', 'error');
         }
-    } catch(e) {
+    } catch (e) {
         showToast('Lỗi kết nối Server', 'error');
     }
 }
@@ -1188,7 +1186,7 @@ async function approveDeletion() {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ username: user, password: pass })
         });
-        
+
         if (resp.ok) {
             const data = await resp.json();
             if (data.user.vai_tro !== 'admin') {
@@ -1205,7 +1203,7 @@ async function approveDeletion() {
 
             const id = document.getElementById('delete-item-id').value;
             const type = document.getElementById('delete-item-type').value;
-            
+
             // Use the admin's token for this deletion
             await executeDelete(id, type, data.access_token);
             closeAllModals();
@@ -1213,7 +1211,7 @@ async function approveDeletion() {
             errDiv.innerText = 'Sai tài khoản hoặc mật khẩu Admin!';
             errDiv.style.display = 'block';
         }
-    } catch(e) {
+    } catch (e) {
         errDiv.innerText = 'Lỗi kết nối server.';
         errDiv.style.display = 'block';
     }
@@ -1232,7 +1230,7 @@ async function executeDelete(id, type, token) {
             method: 'DELETE',
             headers: { 'Authorization': `Bearer ${token}` }
         });
-        if(res.ok) {
+        if (res.ok) {
             showToast('Đã xóa thành công!', 'success');
             closeAllModals();
             fetchStats();
@@ -1245,7 +1243,7 @@ async function executeDelete(id, type, token) {
             const err = await res.json();
             showToast(err.detail || 'Xóa thất bại', 'error');
         }
-    } catch(e) {
+    } catch (e) {
         showToast('Lỗi kết nối Server', 'error');
     }
 }
@@ -1266,13 +1264,13 @@ async function applyAdvancedFilterProduct() {
         const res = await fetch(`${API_BASE_URL}/products`);
         let products = await res.json();
 
-        if (maLoai) products = products.filter(p => (p.danh_muc||'').toLowerCase().includes(maLoai));
-        if (hang)   products = products.filter(p => (p.ma_ncc||'').toLowerCase().includes(hang));
+        if (maLoai) products = products.filter(p => (p.danh_muc || '').toLowerCase().includes(maLoai));
+        if (hang) products = products.filter(p => (p.ma_ncc || '').toLowerCase().includes(hang));
 
         renderFilteredProducts(products);
         closeAllModals();
         showToast(`Đã lọc ra ${products.length} kết quả`, 'info');
-    } catch(e) {
+    } catch (e) {
         showToast('Lỗi Server', 'error');
     }
 }
@@ -1328,7 +1326,7 @@ async function openEditCustomerModal(ma_kh) {
             headers: { 'Authorization': `Bearer ${localStorage.getItem('adminToken')}` }
         });
         const c = await res.json();
-        if(!res.ok) return showToast(c.detail || 'Không tìm thấy KH', 'error');
+        if (!res.ok) return showToast(c.detail || 'Không tìm thấy KH', 'error');
 
         document.getElementById('c-is-edit').value = 'true';
         document.getElementById('modal-customer-title').innerText = 'Sửa Khách hàng: ' + ma_kh;
@@ -1338,9 +1336,9 @@ async function openEditCustomerModal(ma_kh) {
         document.getElementById('c-sdt').value = c.sdt || '';
         document.getElementById('c-diem').value = c.diem_tich_luy || 0;
         document.getElementById('c-hang').value = getMemberTier(c.diem_tich_luy || 0);
-        
+
         openModal('modal-customer');
-    } catch(e) {
+    } catch (e) {
         showToast('Lỗi tải dữ liệu KH', 'error');
     }
 }
@@ -1348,7 +1346,7 @@ async function openEditCustomerModal(ma_kh) {
 async function submitCustomerForm() {
     const isEdit = document.getElementById('c-is-edit').value === 'true';
     const ma_kh = document.getElementById('c-ma_kh').value.trim();
-    if(!ma_kh) return showToast('Vui lòng nhập Mã KH', 'error');
+    if (!ma_kh) return showToast('Vui lòng nhập Mã KH', 'error');
 
     const points = parseInt(document.getElementById('c-diem').value) || 0;
     const payload = {
@@ -1368,7 +1366,7 @@ async function submitCustomerForm() {
             headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${localStorage.getItem('adminToken')}` },
             body: JSON.stringify(payload)
         });
-        if(res.ok) {
+        if (res.ok) {
             showToast(isEdit ? 'Đã cập nhật KH!' : 'Đã thêm KH mới!', 'success');
             closeAllModals();
             fetchStats();
@@ -1377,7 +1375,7 @@ async function submitCustomerForm() {
             const err = await res.json();
             showToast(err.detail || 'Có lỗi xảy ra', 'error');
         }
-    } catch(e) {
+    } catch (e) {
         showToast('Lỗi kết nối Server', 'error');
     }
 }
@@ -1408,7 +1406,7 @@ function promptRemoveOrderItem(btn) {
     if (user && user.vai_tro !== 'admin') {
         const sku = btn.parentElement.querySelector('.item-sku').value || '(Trống)';
         pendingRemoveRow = btn.parentElement;
-        
+
         document.getElementById('cart-delete-sku').innerText = sku;
         document.getElementById('cart-delete-reason').value = '';
         openModal('modal-request-cart-delete');
@@ -1432,27 +1430,27 @@ async function submitCartItemDeleteRequest() {
             },
             body: JSON.stringify({ ma_sku: sku, ly_do: reason })
         });
-        
+
         if (res.ok) {
             const data = await res.json();
             // Đóng modal request, mở modal waiting
             document.getElementById('modal-request-cart-delete').style.display = 'none';
             document.getElementById('waiting-request-id').value = data.id;
-            
+
             // Hiện overlay cố định không cho click đóng
             const overlay = document.getElementById('modal-overlay');
             overlay.style.display = 'block';
             overlay.onclick = null; // Chặn đóng modal khi click ra ngoài
-            
+
             document.getElementById('modal-waiting-approval').style.display = 'block';
-            
+
             // Bắt đầu poll
             pollCartItemDeleteRequest(data.id);
         } else {
             const err = await res.json();
             showToast(err.detail || 'Gửi yêu cầu thất bại', 'error');
         }
-    } catch(e) {
+    } catch (e) {
         showToast('Lỗi kết nối Server', 'error');
     }
 }
@@ -1462,7 +1460,7 @@ async function pollCartItemDeleteRequest(id) {
         const res = await fetch(`${API_BASE_URL}/orders/cart/delete-requests/status/${id}`, {
             headers: { 'Authorization': `Bearer ${localStorage.getItem('adminToken')}` }
         });
-        
+
         if (res.ok) {
             const data = await res.json();
             if (data.trang_thai === 'approved') {
@@ -1482,7 +1480,7 @@ async function pollCartItemDeleteRequest(id) {
     } catch (e) {
         console.error("Poll error:", e);
     }
-    
+
     // Check if modal is still open before continuing to poll
     if (document.getElementById('modal-waiting-approval').style.display === 'block') {
         setTimeout(() => pollCartItemDeleteRequest(id), 3000); // 3 seconds
@@ -1497,13 +1495,13 @@ async function openAddOrderModal() {
     document.getElementById('modal-order-title').innerText = 'Th\u00eam \u0110\u01a1n h\u00e0ng';
     document.getElementById('form-order').reset();
     document.getElementById('order-items-list').innerHTML = '';
-    
+
     const rowMember = document.getElementById('row-member-info');
     if (rowMember) rowMember.style.display = 'none';
-    
+
     const msgEl = document.getElementById('o-voucher-msg');
     if (msgEl) msgEl.style.display = 'none';
-    
+
     recalcOrderTotal();
     addOrderItem();
     openModal('modal-order');
@@ -1538,7 +1536,7 @@ function onOrderCustomerChange() {
                 if (rowInfo) rowInfo.style.display = 'none';
                 recalcOrderTotal();
             }
-        } catch(e) {
+        } catch (e) {
             console.error('L\u1ed7i l\u1ea5y th\u00f4ng tin KH:', e);
         }
     }, 500);
@@ -1552,7 +1550,7 @@ function onOrderVoucherChange() {
     _voucherTimer = setTimeout(async () => {
         const ma_voucher = document.getElementById('o-ma_voucher').value.trim();
         const msgEl = document.getElementById('o-voucher-msg');
-        
+
         if (!ma_voucher) {
             _currentVoucher = null;
             if (msgEl) msgEl.style.display = 'none';
@@ -1566,7 +1564,7 @@ function onOrderVoucherChange() {
             });
             if (res.ok) {
                 const v = await res.json();
-                
+
                 // Check valid date
                 const now = new Date();
                 const startDate = new Date(v.ngay_bat_dau);
@@ -1597,7 +1595,7 @@ function onOrderVoucherChange() {
                     msgEl.style.display = 'block';
                 }
             }
-        } catch(e) {
+        } catch (e) {
             console.error("Lỗi lấy thông tin Voucher:", e);
         }
         recalcOrderTotal();
@@ -1626,7 +1624,7 @@ async function recalcOrderTotal() {
                         headers: { 'Authorization': `Bearer ${localStorage.getItem('adminToken')}` }
                     });
                     _skuPriceCache[ma_sku] = r.ok ? (Number((await r.json()).gia_ban) || 0) : -1;
-                } catch(e) { _skuPriceCache[ma_sku] = -1; }
+                } catch (e) { _skuPriceCache[ma_sku] = -1; }
             }
             const skuInput = row.querySelector('.item-sku');
             if (_skuPriceCache[ma_sku] === -1) {
@@ -1641,10 +1639,10 @@ async function recalcOrderTotal() {
 
     const pctHang = _orderCustomerInfo ? getTierDiscountPct(_orderCustomerInfo.ten_hang) : 0;
     const giamHang = Math.floor(tongHang * pctHang / 100);
-    
+
     let giamVoucher = 0;
     const msgEl = document.getElementById('o-voucher-msg');
-    
+
     if (_currentVoucher) {
         if (tongHang < _currentVoucher.gia_tri_don_toithieu) {
             if (msgEl) {
@@ -1668,12 +1666,12 @@ async function recalcOrderTotal() {
     const thanhTien = Math.max(0, tongHang - giamHang - giamVoucher);
 
     const fmt = n => n.toLocaleString('vi-VN') + ' \u0111';
-    const setEl = (id, v) => { const el = document.getElementById(id); if(el) el.innerText = v; };
-    setEl('o-pct-hang',    pctHang);
-    setEl('o-tong-hang',   fmt(tongHang));
-    setEl('o-giam-hang',   '-' + fmt(giamHang));
-    setEl('o-giam-voucher','-' + fmt(giamVoucher));
-    setEl('o-thanh-tien',  fmt(thanhTien));
+    const setEl = (id, v) => { const el = document.getElementById(id); if (el) el.innerText = v; };
+    setEl('o-pct-hang', pctHang);
+    setEl('o-tong-hang', fmt(tongHang));
+    setEl('o-giam-hang', '-' + fmt(giamHang));
+    setEl('o-giam-voucher', '-' + fmt(giamVoucher));
+    setEl('o-thanh-tien', fmt(thanhTien));
 }
 
 async function openEditOrderModal(ma_hd) {
@@ -1682,16 +1680,16 @@ async function openEditOrderModal(ma_hd) {
             headers: { 'Authorization': `Bearer ${localStorage.getItem('adminToken')}` }
         });
         const o = await res.json();
-        if(!res.ok) return showToast(o.detail || 'Không tìm thấy HĐ', 'error');
+        if (!res.ok) return showToast(o.detail || 'Không tìm thấy HĐ', 'error');
 
         document.getElementById('o-is-edit').value = 'true';
         document.getElementById('modal-order-title').innerText = 'Sửa Đơn hàng: ' + ma_hd;
         document.getElementById('o-ma_hd').value = o.ma_hd;
         document.getElementById('o-ma_hd').readOnly = true;
-        
+
         document.getElementById('o-ma_kh').value = o.ma_kh || '';
         document.getElementById('o-ma_voucher').value = o.ma_voucher || '';
-        
+
         const ttEl = document.getElementById('o-tt');
         if (ttEl) ttEl.value = o.phuong_thuc_thanh_toan || 'Tiền mặt';
 
@@ -1713,8 +1711,8 @@ async function openEditOrderModal(ma_hd) {
         // Trigger updates để tải dữ liệu khách, voucher, tổng giá trị...
         onOrderCustomerChange();
         onOrderVoucherChange();
-        
-    } catch(e) {
+
+    } catch (e) {
         showToast('Lỗi tải dữ liệu HĐ', 'error');
         console.error(e);
     }
@@ -1766,7 +1764,7 @@ async function submitOrderForm() {
             const err = await res.json().catch(() => ({}));
             showToast(err.detail || 'Có lỗi xảy ra', 'error');
         }
-    } catch(e) {
+    } catch (e) {
         showToast('Lỗi Server', 'error');
     }
 }
@@ -1786,7 +1784,7 @@ async function openEditEmployeeModal(ma_nv) {
             headers: { 'Authorization': `Bearer ${localStorage.getItem('adminToken')}` }
         });
         const e = await res.json();
-        if(!res.ok) return showToast(e.detail || 'Không tìm thấy NV', 'error');
+        if (!res.ok) return showToast(e.detail || 'Không tìm thấy NV', 'error');
 
         document.getElementById('e-is-edit').value = 'true';
         document.getElementById('modal-employee-title').innerText = 'Sửa Nhân viên: ' + ma_nv;
@@ -1801,9 +1799,9 @@ async function openEditEmployeeModal(ma_nv) {
         document.getElementById('e-diachi').value = e.dia_chi || '';
         document.getElementById('e-email').value = e.email || '';
         document.getElementById('e-ngayvaolam').value = e.ngay_vao_lam ? e.ngay_vao_lam.slice(0, 10) : '';
-        
+
         openModal('modal-employee');
-    } catch(err) {
+    } catch (err) {
         showToast('Lỗi tải dữ liệu NV', 'error');
     }
 }
@@ -1811,7 +1809,7 @@ async function openEditEmployeeModal(ma_nv) {
 async function submitEmployeeForm() {
     const isEdit = document.getElementById('e-is-edit').value === 'true';
     const ma_nv = document.getElementById('e-ma_nv').value.trim();
-    if(!ma_nv) return showToast('Vui lòng nhập Mã NV', 'error');
+    if (!ma_nv) return showToast('Vui lòng nhập Mã NV', 'error');
 
     const payload = {
         ma_nv: ma_nv,
@@ -1835,7 +1833,7 @@ async function submitEmployeeForm() {
             headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${localStorage.getItem('adminToken')}` },
             body: JSON.stringify(payload)
         });
-        if(res.ok) {
+        if (res.ok) {
             showToast(isEdit ? 'Đã cập nhật NV!' : 'Đã thêm NV mới!', 'success');
             closeAllModals();
             fetchStats();
@@ -1844,7 +1842,7 @@ async function submitEmployeeForm() {
             const err = await res.json().catch(() => ({}));
             showToast(err.detail || 'Có lỗi xảy ra', 'error');
         }
-    } catch(err) {
+    } catch (err) {
         showToast('Lỗi Server', 'error');
     }
 }
@@ -1864,7 +1862,7 @@ async function openEditSupplierModal(ma_ncc) {
             headers: { 'Authorization': `Bearer ${localStorage.getItem('adminToken')}` }
         });
         const s = await res.json();
-        if(!res.ok) return showToast(s.detail || 'Không tìm thấy NCC', 'error');
+        if (!res.ok) return showToast(s.detail || 'Không tìm thấy NCC', 'error');
 
         document.getElementById('s-is-edit').value = 'true';
         document.getElementById('modal-supplier-title').innerText = 'Sửa Nhà cung cấp: ' + ma_ncc;
@@ -1874,9 +1872,9 @@ async function openEditSupplierModal(ma_ncc) {
         document.getElementById('s-sdt').value = s.sdt || '';
         document.getElementById('s-email').value = s.email || '';
         document.getElementById('s-diachi').value = s.dia_chi || '';
-        
+
         openModal('modal-supplier');
-    } catch(err) {
+    } catch (err) {
         showToast('Lỗi tải dữ liệu NCC', 'error');
     }
 }
@@ -1884,7 +1882,7 @@ async function openEditSupplierModal(ma_ncc) {
 async function submitSupplierForm() {
     const isEdit = document.getElementById('s-is-edit').value === 'true';
     const ma_ncc = document.getElementById('s-ma_ncc').value.trim();
-    if(!ma_ncc) return showToast('Vui lòng nhập Mã NCC', 'error');
+    if (!ma_ncc) return showToast('Vui lòng nhập Mã NCC', 'error');
 
     const payload = {
         ma_ncc: ma_ncc,
@@ -1903,7 +1901,7 @@ async function submitSupplierForm() {
             headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${localStorage.getItem('adminToken')}` },
             body: JSON.stringify(payload)
         });
-        if(res.ok) {
+        if (res.ok) {
             showToast(isEdit ? 'Đã cập nhật NCC!' : 'Đã thêm NCC mới!', 'success');
             closeAllModals();
             fetchStats();
@@ -1912,7 +1910,7 @@ async function submitSupplierForm() {
             const err = await res.json().catch(() => ({}));
             showToast(err.detail || 'Có lỗi xảy ra', 'error');
         }
-    } catch(err) {
+    } catch (err) {
         showToast('Lỗi Server', 'error');
     }
 }
@@ -1928,16 +1926,16 @@ function openFilterCustomerModal() {
 async function applyFilterCustomer() {
     const hang = document.getElementById('f-c-hang').value;
     const minDiem = parseInt(document.getElementById('f-c-diem-min').value);
-    
+
     try {
         const res = await fetch(`${API_BASE_URL}/customers`, {
             headers: { 'Authorization': `Bearer ${localStorage.getItem('adminToken')}` }
         });
         let items = await res.json();
-        
+
         if (hang) items = items.filter(x => x.ten_hang === hang);
-        if (!isNaN(minDiem)) items = items.filter(x => (x.diem_tich_luy||0) >= minDiem);
-        
+        if (!isNaN(minDiem)) items = items.filter(x => (x.diem_tich_luy || 0) >= minDiem);
+
         const crudBody = document.getElementById('crud-customers-body');
         if (!crudBody) return;
         crudBody.innerHTML = '';
@@ -1965,7 +1963,7 @@ async function applyFilterCustomer() {
         }
         closeAllModals();
         showToast(`Đã lọc ra ${items.length} kết quả`, 'info');
-    } catch(e) { showToast('Lỗi Server', 'error'); }
+    } catch (e) { showToast('Lỗi Server', 'error'); }
 }
 
 function clearFilterAPI_Customer() {
@@ -1984,17 +1982,17 @@ async function applyFilterOrder() {
     const ngay = document.getElementById('f-o-ngay').value;
     const tt = document.getElementById('f-o-trangthai').value;
     const method = document.getElementById('f-o-tt').value;
-    
+
     try {
         const res = await fetch(`${API_BASE_URL}/orders`, {
             headers: { 'Authorization': `Bearer ${localStorage.getItem('adminToken')}` }
         });
         let items = await res.json();
-        
+
         if (ngay) items = items.filter(x => x.ngay_tao === ngay);
         if (tt) items = items.filter(x => x.trang_thai === tt);
         if (method) items = items.filter(x => x.phuong_thuc_thanh_toan === method);
-        
+
         const crudBody = document.getElementById('crud-orders-body');
         if (!crudBody) return;
         crudBody.innerHTML = '';
@@ -2006,7 +2004,7 @@ async function applyFilterOrder() {
                 tr.innerHTML = `
                     <td class="text-center"><span class="badge-secondary border-0">${item.ma_hd}</span></td>
                     <td class="text-center">${item.ngay_tao}</td>
-                    <td class="text-center">${(item.tong_tien_sau_giam||0).toLocaleString('vi-VN')} đ</td>
+                    <td class="text-center">${(item.tong_tien_sau_giam || 0).toLocaleString('vi-VN')} đ</td>
                     <td class="text-center">${item.phuong_thuc_thanh_toan}</td>
                     <td class="text-center">${item.trang_thai}</td>
                     <td class="text-center">${item.ma_kh}</td>
@@ -2024,7 +2022,7 @@ async function applyFilterOrder() {
         }
         closeAllModals();
         showToast(`Đã lọc ra ${items.length} kết quả`, 'info');
-    } catch(e) { showToast('Lỗi Server', 'error'); }
+    } catch (e) { showToast('Lỗi Server', 'error'); }
 }
 
 function clearFilterAPI_Order() {
@@ -2042,16 +2040,16 @@ function openFilterEmployeeModal() {
 async function applyFilterEmployee() {
     const gt = document.getElementById('f-e-gioitinh').value;
     const vitri = document.getElementById('f-e-vitri').value.trim().toLowerCase();
-    
+
     try {
         const res = await fetch(`${API_BASE_URL}/employees`, {
             headers: { 'Authorization': `Bearer ${localStorage.getItem('adminToken')}` }
         });
         let items = await res.json();
-        
+
         if (gt) items = items.filter(x => x.gioi_tinh === gt);
-        if (vitri) items = items.filter(x => (x.ma_vi_tri||'').toLowerCase().includes(vitri));
-        
+        if (vitri) items = items.filter(x => (x.ma_vi_tri || '').toLowerCase().includes(vitri));
+
         const crudBody = document.getElementById('crud-employees-body');
         if (!crudBody) return;
         crudBody.innerHTML = '';
@@ -2080,7 +2078,7 @@ async function applyFilterEmployee() {
         }
         closeAllModals();
         showToast(`Đã lọc ra ${items.length} kết quả`, 'info');
-    } catch(e) { showToast('Lỗi Server', 'error'); }
+    } catch (e) { showToast('Lỗi Server', 'error'); }
 }
 
 function clearFilterAPI_Employee() {
@@ -2098,16 +2096,16 @@ function openFilterSupplierModal() {
 async function applyFilterSupplier() {
     const ten = document.getElementById('f-s-ten').value.trim().toLowerCase();
     const diachi = document.getElementById('f-s-diachi').value.trim().toLowerCase();
-    
+
     try {
         const res = await fetch(`${API_BASE_URL}/suppliers`, {
             headers: { 'Authorization': `Bearer ${localStorage.getItem('adminToken')}` }
         });
         let items = await res.json();
-        
-        if (ten) items = items.filter(x => (x.ten_ncc||'').toLowerCase().includes(ten));
-        if (diachi) items = items.filter(x => (x.dia_chi||'').toLowerCase().includes(diachi));
-        
+
+        if (ten) items = items.filter(x => (x.ten_ncc || '').toLowerCase().includes(ten));
+        if (diachi) items = items.filter(x => (x.dia_chi || '').toLowerCase().includes(diachi));
+
         const crudBody = document.getElementById('crud-suppliers-body');
         if (!crudBody) return;
         crudBody.innerHTML = '';
@@ -2135,7 +2133,7 @@ async function applyFilterSupplier() {
         }
         closeAllModals();
         showToast(`Đã lọc ra ${items.length} kết quả`, 'info');
-    } catch(e) { showToast('Lỗi Server', 'error'); }
+    } catch (e) { showToast('Lỗi Server', 'error'); }
 }
 
 function clearFilterAPI_Supplier() {
@@ -2208,7 +2206,7 @@ function openAddImportModal() {
     // Auto-fill current datetime (readonly)
     const now = new Date();
     const pad = n => String(n).padStart(2, '0');
-    const dateStr = `${now.getFullYear()}-${pad(now.getMonth()+1)}-${pad(now.getDate())} ${pad(now.getHours())}:${pad(now.getMinutes())}`;
+    const dateStr = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())} ${pad(now.getHours())}:${pad(now.getMinutes())}`;
     document.getElementById('im-ngay_nhap').value = dateStr;
 
     // Auto-fill employee from token

@@ -202,14 +202,14 @@ router.post("/:ma_hd/delete-request", checkRole("admin", "cashier"), async (req,
     if (!existing) return res.status(404).json({ detail: "Hóa đơn không tồn tại" });
 
     // Check if request already exists and is pending
-    const existingRequest = await prisma.deleteRequest.findFirst({
+    const existingRequest = await prisma.delete_request.findFirst({
       where: { ma_hd, trang_thai: "pending" },
     });
     if (existingRequest) {
       return res.status(400).json({ detail: "Đã có yêu cầu xóa hóa đơn này đang chờ xử lý" });
     }
 
-    const request = await prisma.deleteRequest.create({
+    const request = await prisma.delete_request.create({
       data: {
         ma_hd,
         ma_nv_cashier,
@@ -237,7 +237,7 @@ router.get("/delete-requests/list", checkRole("admin"), async (req, res, next) =
     const take = Number(req.query.limit || 100);
     const trang_thai = req.query.trang_thai || "pending"; // Default to pending
 
-    const requests = await prisma.deleteRequest.findMany({
+    const requests = await prisma.delete_request.findMany({
       where: trang_thai ? { trang_thai } : {},
       skip,
       take,
@@ -285,7 +285,7 @@ router.post("/:ma_hd/confirm-delete", checkRole("admin"), async (req, res, next)
     });
     if (!existing) return res.status(404).json({ detail: "Hóa đơn không tồn tại" });
 
-    const deleteReq = await prisma.deleteRequest.findFirst({
+    const deleteReq = await prisma.delete_request.findFirst({
       where: { ma_hd, trang_thai: "pending" },
     });
 
@@ -321,7 +321,7 @@ router.post("/:ma_hd/confirm-delete", checkRole("admin"), async (req, res, next)
       await tx.hoaDon.delete({ where: { ma_hd } });
 
       if (deleteReq) {
-        await tx.deleteRequest.update({
+        await tx.delete_request.update({
           where: { id: deleteReq.id },
           data: {
             trang_thai: "approved",
@@ -344,14 +344,14 @@ router.post("/:ma_hd/reject-delete", checkRole("admin"), async (req, res, next) 
     const { ma_hd } = req.params;
     const data = req.body || {};
 
-    const deleteReq = await prisma.deleteRequest.findFirst({
+    const deleteReq = await prisma.delete_request.findFirst({
       where: { ma_hd, trang_thai: "pending" },
     });
     if (!deleteReq) {
       return res.status(404).json({ detail: "Không tìm thấy yêu cầu xóa hóa đơn đang chờ xử lý" });
     }
 
-    await prisma.deleteRequest.update({
+    await prisma.delete_request.update({
       where: { id: deleteReq.id },
       data: {
         trang_thai: "rejected",
@@ -428,7 +428,7 @@ router.post("/cart/delete-request", checkRole("admin", "cashier"), async (req, r
 
     if (!ma_sku) return res.status(400).json({ detail: "Vui lòng cung cấp mã SKU cần xóa" });
 
-    const request = await prisma.cartItemDeleteRequest.create({
+    const request = await prisma.cart_item_delete_request.create({
       data: {
         ma_nv_cashier,
         ma_sku,
@@ -445,7 +445,7 @@ router.post("/cart/delete-request", checkRole("admin", "cashier"), async (req, r
 // GET /orders/cart/delete-requests/status/:id - Cashier polls status
 router.get("/cart/delete-requests/status/:id", checkRole("admin", "cashier"), async (req, res, next) => {
   try {
-    const request = await prisma.cartItemDeleteRequest.findUnique({
+    const request = await prisma.cart_item_delete_request.findUnique({
       where: { id: req.params.id },
     });
     if (!request) return res.status(404).json({ detail: "Yêu cầu không tồn tại" });
@@ -463,7 +463,7 @@ router.get("/cart/delete-requests/list", checkRole("admin"), async (req, res, ne
     const take = Number(req.query.limit || 100);
     const trang_thai = req.query.trang_thai || "pending";
 
-    const requests = await prisma.cartItemDeleteRequest.findMany({
+    const requests = await prisma.cart_item_delete_request.findMany({
       where: trang_thai ? { trang_thai } : {},
       skip,
       take,
@@ -491,11 +491,11 @@ router.get("/cart/delete-requests/list", checkRole("admin"), async (req, res, ne
 // POST /orders/cart/delete-requests/:id/approve - Admin approve
 router.post("/cart/delete-requests/:id/approve", checkRole("admin"), async (req, res, next) => {
   try {
-    const request = await prisma.cartItemDeleteRequest.findUnique({ where: { id: req.params.id } });
+    const request = await prisma.cart_item_delete_request.findUnique({ where: { id: req.params.id } });
     if (!request) return res.status(404).json({ detail: "Yêu cầu không tồn tại" });
     if (request.trang_thai !== "pending") return res.status(400).json({ detail: "Yêu cầu này đã được xử lý" });
 
-    await prisma.cartItemDeleteRequest.update({
+    await prisma.cart_item_delete_request.update({
       where: { id: req.params.id },
       data: { trang_thai: "approved", ngay_xu_ly: new Date() }
     });
@@ -509,11 +509,11 @@ router.post("/cart/delete-requests/:id/approve", checkRole("admin"), async (req,
 // POST /orders/cart/delete-requests/:id/reject - Admin reject
 router.post("/cart/delete-requests/:id/reject", checkRole("admin"), async (req, res, next) => {
   try {
-    const request = await prisma.cartItemDeleteRequest.findUnique({ where: { id: req.params.id } });
+    const request = await prisma.cart_item_delete_request.findUnique({ where: { id: req.params.id } });
     if (!request) return res.status(404).json({ detail: "Yêu cầu không tồn tại" });
     if (request.trang_thai !== "pending") return res.status(400).json({ detail: "Yêu cầu này đã được xử lý" });
 
-    await prisma.cartItemDeleteRequest.update({
+    await prisma.cart_item_delete_request.update({
       where: { id: req.params.id },
       data: { trang_thai: "rejected", ngay_xu_ly: new Date() }
     });

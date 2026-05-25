@@ -8,16 +8,16 @@ const router = Router();
 
 function serialize(row) {
   return {
-    ma_nv:        row.ma_nv,
-    ho_ten_nv:    row.ho_ten_nv,
-    ngay_sinh:    toDateOnlyString(row.ngay_sinh),
-    gioi_tinh:    row.gioi_tinh,
-    dia_chi:      row.dia_chi,
-    sdt:          row.sdt,
-    email:        row.email,
+    ma_nv: row.ma_nv,
+    ho_ten_nv: row.ho_ten_nv,
+    ngay_sinh: toDateOnlyString(row.ngay_sinh),
+    gioi_tinh: row.gioi_tinh,
+    dia_chi: row.dia_chi,
+    sdt: row.sdt,
+    email: row.email,
     ngay_vao_lam: toDateOnlyString(row.ngay_vao_lam),
-    ma_vi_tri:    row.ma_vi_tri,
-    ma_ch:        row.ma_ch,
+    ma_vi_tri: row.ma_vi_tri,
+    // ma_ch:        row.ma_ch,
   };
 }
 
@@ -26,7 +26,7 @@ router.get("/me", async (req, res, next) => {
   try {
     const authorization = req.header("authorization") || "";
     const token = authorization.startsWith("Bearer ") ? authorization.slice(7).trim() : null;
-    
+
     if (!token) {
       return res.status(401).json({ detail: "Not authenticated" });
     }
@@ -55,7 +55,7 @@ router.put("/me", async (req, res, next) => {
   try {
     const authorization = req.header("authorization") || "";
     const token = authorization.startsWith("Bearer ") ? authorization.slice(7).trim() : null;
-    
+
     if (!token) {
       return res.status(401).json({ detail: "Not authenticated" });
     }
@@ -107,7 +107,7 @@ router.get("/:ma_nv", checkRole("admin"), async (req, res, next) => {
 // GET /employees
 router.get("/", checkRole("admin"), async (req, res, next) => {
   try {
-    const skip = Number(req.query.skip  || 0);
+    const skip = Number(req.query.skip || 0);
     const take = Number(req.query.limit || 100);
     const rows = await prisma.nhanVien.findMany({ skip, take, orderBy: { ma_nv: "asc" } });
     res.json(rows.map(serialize));
@@ -129,19 +129,19 @@ router.post("/", checkRole("admin"), async (req, res, next) => {
 
     const created = await prisma.nhanVien.create({
       data: {
-        ma_nv:        String(data.ma_nv),
-        ho_ten_nv:    String(data.ho_ten_nv),
-        ngay_sinh:    new Date(ngay_sinh),
-        gioi_tinh:    String(data.gioi_tinh),
-        dia_chi:      String(data.dia_chi),
-        sdt:          String(data.sdt),
-        email:        String(data.email),
+        ma_nv: String(data.ma_nv),
+        ho_ten_nv: String(data.ho_ten_nv),
+        ngay_sinh: new Date(ngay_sinh),
+        gioi_tinh: String(data.gioi_tinh),
+        dia_chi: String(data.dia_chi),
+        sdt: String(data.sdt),
+        email: String(data.email),
         ngay_vao_lam: new Date(ngay_vao_lam),
-        ma_vi_tri:    String(data.ma_vi_tri),
-        ma_ch:        String(data.ma_ch),
+        ma_vi_tri: String(data.ma_vi_tri),
+        // ma_ch:        String(data.ma_ch),
         ten_dang_nhap: String(data.ten_dang_nhap || data.ma_nv),
         mat_khau_hash: "$2b$10$5XbCCqwl7PgTQlCgSm2bWusPPTA3kYWiqaXjD.mAlymWBsBRc/MyW",
-        vai_tro:      String(data.vai_tro || "cashier"),
+        vai_tro: String(data.vai_tro || "cashier"),
       },
     });
     res.status(201).json(serialize(created));
@@ -162,15 +162,15 @@ router.put("/:ma_nv", checkRole("admin"), async (req, res, next) => {
     const updated = await prisma.nhanVien.update({
       where: { ma_nv },
       data: {
-        ho_ten_nv:    data.ho_ten_nv    ? String(data.ho_ten_nv)                : undefined,
-        ngay_sinh:    data.ngay_sinh    ? new Date(toDateOnlyString(data.ngay_sinh)) : undefined,
-        gioi_tinh:    data.gioi_tinh    ? String(data.gioi_tinh)                : undefined,
-        dia_chi:      data.dia_chi      ? String(data.dia_chi)                  : undefined,
-        sdt:          data.sdt          ? String(data.sdt)                      : undefined,
-        email:        data.email        ? String(data.email)                    : undefined,
+        ho_ten_nv: data.ho_ten_nv ? String(data.ho_ten_nv) : undefined,
+        ngay_sinh: data.ngay_sinh ? new Date(toDateOnlyString(data.ngay_sinh)) : undefined,
+        gioi_tinh: data.gioi_tinh ? String(data.gioi_tinh) : undefined,
+        dia_chi: data.dia_chi ? String(data.dia_chi) : undefined,
+        sdt: data.sdt ? String(data.sdt) : undefined,
+        email: data.email ? String(data.email) : undefined,
         ngay_vao_lam: data.ngay_vao_lam ? new Date(toDateOnlyString(data.ngay_vao_lam)) : undefined,
-        ma_vi_tri:    data.ma_vi_tri    ? String(data.ma_vi_tri)                : undefined,
-        ma_ch:        data.ma_ch        ? String(data.ma_ch)                    : undefined,
+        ma_vi_tri: data.ma_vi_tri ? String(data.ma_vi_tri) : undefined,
+        // ma_ch:        data.ma_ch        ? String(data.ma_ch)                    : undefined,
       },
     });
     res.json(serialize(updated));
