@@ -16,7 +16,7 @@ function calcPoints(soTien) {
  * Lấy dữ liệu từ bảng hang_thanh_vien để đảm bảo tính đồng bộ.
  */
 async function determineTier(points, tx = prisma) {
-  const tiers = await tx.hangThanhVien.findMany({
+  const tiers = await tx.hang_thanh_vien.findMany({
     orderBy: { diem_toithieu: 'desc' }
   });
   

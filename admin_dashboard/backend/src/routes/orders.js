@@ -138,10 +138,10 @@ router.post("/", checkRole("admin", "cashier"), async (req, res, next) => {
       let giam_gia_hang = 0;
       const kh = await tx.khachHang.findUnique({
         where: { ma_kh },
-        include: { hangthanhvien: true },
+        include: { hang_thanh_vien: true },
       });
-      if (kh && kh.hangthanhvien) {
-        giam_gia_hang = (tong_tien_truoc_giam * kh.hangthanhvien.phan_tram_uudai) / 100;
+      if (kh && kh.hang_thanh_vien) {
+        giam_gia_hang = (tong_tien_truoc_giam * kh.hang_thanh_vien.phan_tram_uudai) / 100;
       }
 
       const tong_tien_sau_giam = tong_tien_truoc_giam - giam_gia_voucher - giam_gia_hang;

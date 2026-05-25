@@ -8,6 +8,25 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+enum HangThanhVienEnum {
+  "Vô hạng"
+  "Sắt"
+  "Đồng"
+  "Bạc"
+  "Vàng"
+}
+
+enum GioiTinhKhachHang {
+  Nam
+  Nữ
+  Unisex
+}
+
+enum GioiTinhNhanVien {
+  Nam
+  Nữ
+}
+
 model ViTri {
   ma_vi_tri   String     @id
   ten_chuc_vu String
@@ -23,9 +42,9 @@ model KhachHang {
   ho_ten_kh       String
   sdt             String          @unique
   diem_tich_luy   Int             @default(0)
-  ten_hang        String          @default("Đồng")
+  ten_hang HangThanhVienEnum @default("Vô hạng")
   hoadons         HoaDon[]
-  hang_thanh_vien hang_thanh_vien @relation(fields: [ten_hang], references: [ten_hang])
+  hang_thanh_vien HangThanhVien @relation(fields: [ten_hang], references: [ten_hang])
 
   @@index([ten_hang], map: "khachhang_ten_hang_fkey")
   @@map("khachhang")
@@ -47,7 +66,7 @@ model NhanVien {
   ma_nv                    String                     @id
   ho_ten_nv                String
   ngay_sinh                DateTime
-  gioi_tinh                String
+  gioi_tinh GioiTinhNhanVien
   dia_chi                  String
   sdt                      String                     @unique
   email                    String                     @unique
@@ -72,7 +91,7 @@ model SanPham {
   ten_sp                 String
   danh_muc               String
   chat_lieu              String
-  gioi_tinh              String
+  gioi_tinh GioiTinhKhachHang
   ma_ncc                 String
   bienthes               BienTheSKU[]
   product_delete_request product_delete_request[]
@@ -193,10 +212,13 @@ model delete_request {
 }
 
 model hang_thanh_vien {
-  ten_hang        String      @id
-  diem_toithieu   Int         @default(0)
-  phan_tram_uudai Int         @default(0)
-  khachhang       KhachHang[]
+  ten_hang        HangThanhVienEnum @id
+  diem_toithieu   Int               @default(0)
+  phan_tram_uudai Int               @default(0)
+
+  khachhang KhachHang[]
+
+  @@map("hangthanhvien")
 }
 
 model product_delete_request {

@@ -8,13 +8,13 @@ const router = Router();
 
 function serialize(row) {
   return {
-    ma_kh:          row.ma_kh,
-    ho_ten_kh:      row.ho_ten_kh,
-    dia_chi:        row.dia_chi,
-    sdt:            row.sdt,
-    email:          row.email,
-    diem_tich_luy:  row.diem_tich_luy  ?? 0,
-    ten_hang:       row.ten_hang ?? "Vô hạng",
+    ma_kh: row.ma_kh,
+    ho_ten_kh: row.ho_ten_kh,
+    // dia_chi:        row.dia_chi,
+    sdt: row.sdt,
+    // email:          row.email,
+    diem_tich_luy: row.diem_tich_luy ?? 0,
+    ten_hang: row.ten_hang ?? "Vô hạng",
   };
 }
 
@@ -33,7 +33,7 @@ router.get("/:ma_kh", async (req, res, next) => {
 // GET /customers
 router.get("/", async (req, res, next) => {
   try {
-    const skip = Number(req.query.skip  || 0);
+    const skip = Number(req.query.skip || 0);
     const take = Number(req.query.limit || 100);
     const rows = await prisma.khachHang.findMany({ skip, take, orderBy: { ma_kh: "asc" } });
     res.json(rows.map(serialize));
@@ -51,13 +51,13 @@ router.post("/", checkRole("admin", "cashier"), async (req, res, next) => {
 
     const created = await prisma.khachHang.create({
       data: {
-        ma_kh:          String(data.ma_kh),
-        ho_ten_kh:      String(data.ho_ten_kh),
-        dia_chi:        data.dia_chi ? String(data.dia_chi) : null,
-        sdt:            String(data.sdt),
-        email:          data.email ? String(data.email) : null,
-        diem_tich_luy:  points,
-        ten_hang:       tier,
+        ma_kh: String(data.ma_kh),
+        ho_ten_kh: String(data.ho_ten_kh),
+        // dia_chi:        data.dia_chi ? String(data.dia_chi) : null,
+        sdt: String(data.sdt),
+        // email:          data.email ? String(data.email) : null,
+        diem_tich_luy: points,
+        ten_hang: tier,
       },
     });
     res.status(201).json(serialize(created));
@@ -81,12 +81,12 @@ router.put("/:ma_kh", checkRole("admin", "cashier"), async (req, res, next) => {
     const updated = await prisma.khachHang.update({
       where: { ma_kh },
       data: {
-        ho_ten_kh:      data.ho_ten_kh ? String(data.ho_ten_kh) : undefined,
-        dia_chi:        data.dia_chi !== undefined ? String(data.dia_chi) : undefined,
-        sdt:            data.sdt ? String(data.sdt) : undefined,
-        email:          data.email !== undefined ? String(data.email) : undefined,
-        diem_tich_luy:  points,
-        ten_hang:       tier,
+        ho_ten_kh: data.ho_ten_kh ? String(data.ho_ten_kh) : undefined,
+        // dia_chi:        data.dia_chi !== undefined ? String(data.dia_chi) : undefined,
+        sdt: data.sdt ? String(data.sdt) : undefined,
+        // email:          data.email !== undefined ? String(data.email) : undefined,
+        diem_tich_luy: points,
+        ten_hang: tier,
       },
     });
     res.json(serialize(updated));
